@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDP CAMP 2026 — LIVE LEADERBOARD</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Space+Mono:wght@400;700&family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg-dungeon);
+    color: var(--text-parchment);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow: hidden;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(193,155,75,.08) 0%, transparent 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 79px, rgba(255,255,255,.008) 79px, rgba(255,255,255,.008) 80px),
+      repeating-linear-gradient(90deg, transparent, transparent 119px, rgba(255,255,255,.005) 119px, rgba(255,255,255,.005) 120px);
+  }
+
+  /* ── TOP HEADER ── */
+  .live-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 52px 0;
+    position: relative;
+  }
+  .live-title {
+    font-family: var(--font-title);
+    font-size: 13px;
+    letter-spacing: 6px;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+  }
+  .live-logo {
+    font-family: var(--font-title);
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: 8px;
+    color: var(--gold-bright);
+    text-shadow: 0 0 40px rgba(193,155,75,.5);
+    text-align: center;
+  }
+  .live-logo-sub {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--text-shadow);
+    text-align: center;
+    margin-top: 2px;
+  }
+  .live-countdown {
+    text-align: right;
+  }
+  .live-countdown-time {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 700;
+    color: #e57373;
+    letter-spacing: 2px;
+  }
+  .live-countdown-label {
+    font-size: 10px;
+    color: var(--text-shadow);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  /* ── DIVIDER ── */
+  .live-divider {
+    height: 1px;
+    margin: 20px 52px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), var(--gold), var(--gold-dim), transparent);
+    opacity: .5;
+  }
+
+  /* ── MAIN GRID ── */
+  .live-main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 0 52px;
+    height: calc(100vh - 140px);
+  }
+
+  /* ── TEAM BARS (left) ── */
+  .live-teams {
+    padding-right: 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 18px;
+  }
+  .live-team-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: transform .3s ease;
+  }
+  .live-team-row:hover { transform: translateX(4px); }
+  .live-rank-num {
+    font-family: var(--font-title);
+    font-size: 48px;
+    font-weight: 900;
+    width: 60px;
+    text-align: center;
+    color: var(--text-shadow);
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .live-rank-num.r1 { color: var(--gold-bright); text-shadow: 0 0 20px rgba(193,155,75,.5); }
+  .live-rank-num.r2 { color: #b0b8c1; }
+  .live-rank-num.r3 { color: #cd7f32; }
+  .live-team-body { flex: 1; }
+  .live-team-name {
+    font-family: var(--font-title);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .live-bar-track {
+    height: 16px;
+    background: rgba(255,255,255,.06);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+  .live-bar-fill {
+    height: 100%;
+    border-radius: 8px;
+    transition: width 2s cubic-bezier(.25,.46,.45,.94);
+    position: relative;
+    overflow: hidden;
+  }
+  .live-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -60%; width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+    animation: barShimmer 3s ease-in-out infinite;
+  }
+  @keyframes barShimmer { 0%,100%{left:-60%} 50%{left:110%} }
+  .live-team-score {
+    font-family: var(--font-title);
+    font-size: 30px;
+    font-weight: 900;
+    min-width: 100px;
+    text-align: right;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  /* ── CAMPER LEADERBOARD (right) ── */
+  .live-campers {
+    border-left: 1px solid var(--border-iron);
+    padding-left: 40px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .live-section-title {
+    font-family: var(--font-title);
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--gold-dim);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-iron);
+  }
+  .live-camper-list {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .live-camper-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--r-lg);
+    background: var(--bg-cell);
+    border: 1px solid var(--border-iron);
+    transition: all .3s;
+    animation: rowIn .4s ease both;
+  }
+  .live-camper-row.top1 {
+    background: linear-gradient(135deg, rgba(193,155,75,.08), transparent);
+    border-color: rgba(193,155,75,.25);
+  }
+  @keyframes rowIn { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:none} }
+  .live-cr-rank {
+    font-family: var(--font-title);
+    font-size: 18px;
+    font-weight: 700;
+    width: 28px;
+    text-align: center;
+    color: var(--text-shadow);
+    flex-shrink: 0;
+  }
+  .live-cr-rank.top { color: var(--gold-bright); }
+  .live-cr-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-title);
+    font-size: 15px; font-weight: 700;
+    color: var(--gold-bright);
+    flex-shrink: 0;
+    border: 2px solid;
+  }
+  .live-cr-name {
+    flex: 1;
+    font-family: var(--font-title);
+    font-size: 16px;
+    letter-spacing: .3px;
+  }
+  .live-cr-team { font-size: 11px; color: var(--text-shadow); margin-top: 1px; }
+  .live-cr-score {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .live-cr-badges {
+    font-size: 14px;
+    letter-spacing: -2px;
+    flex-shrink: 0;
+  }
+
+  /* ── ACTIVITY TICKER ── */
+  .live-ticker {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: rgba(10,10,12,.9);
+    border-top: 1px solid var(--border-gold);
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    gap: 0;
+  }
+  .ticker-label {
+    font-family: var(--font-title);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--gold-dim);
+    padding: 0 16px;
+    border-right: 1px solid var(--border-iron);
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 100%;
+  }
+  .ticker-track {
+    flex: 1;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+  .ticker-inner {
+    display: flex;
+    gap: 60px;
+    animation: ticker 30s linear infinite;
+    white-space: nowrap;
+    font-size: 13px;
+    color: var(--text-stone);
+  }
+  @keyframes ticker { from{transform:translateX(100%)} to{transform:translateX(-100%)} }
+  .ticker-item { white-space: nowrap; }
+
+  /* ── REFRESH INDICATOR ── */
+  .refresh-dot {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--magic-green);
+    animation: pip 2s ease-in-out infinite;
+  }
+
+  /* ── CONTROL BAR ── */
+  .control-bar {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  body:hover .control-bar { opacity: 1; }
+
+  /* ── MEDAL ICONS ── */
+  .medal-r1::before { content: '👑'; font-size: 14px; margin-right: 4px; }
+  .medal-r2::before { content: '🥈'; font-size: 12px; margin-right: 4px; }
+  .medal-r3::before { content: '🥉'; font-size: 12px; margin-right: 4px; }
+</style>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+</head>
+<body>
+<div class="refresh-dot"></div>
+
+<div class="control-bar">
+  <button class="btn btn-ghost btn-sm" onclick="window.location.href='staff.html'" style="font-size:11px">← Staff</button>
+  <button class="btn btn-ghost btn-sm" onclick="toggleFullscreen()" style="font-size:11px">⛶ Fullscreen</button>
+</div>
+
+<div class="live-header">
+  <div class="live-title">LIVE · <span id="liveSubtitle">Leaderboard</span></div>
+  <div>
+    <div class="live-logo">IDP CAMP</div>
+    <div class="live-logo-sub">IDP CAMP · 2026</div>
+  </div>
+  <div class="live-countdown" id="countdownBlock" style="visibility:hidden">
+    <div class="live-countdown-time" id="liveTimer">--:--:--</div>
+    <div class="live-countdown-label" id="liveTimerLabel">เหลือเวลา</div>
+  </div>
+</div>
+
+<div class="live-divider"></div>
+
+<div class="live-main">
+
+  <!-- Team Bars -->
+  <div class="live-teams" id="liveTeams">
+    <!-- rendered by JS -->
+  </div>
+
+  <!-- Camper Rankings -->
+  <div class="live-campers">
+    <div class="live-section-title"><span class="live-pip" style="display:inline-block;width:6px;height:6px;background:var(--magic-green);border-radius:50%;margin-right:6px;animation:pip 2s ease-in-out infinite"></span>TOP CAMPERS</div>
+    <div class="live-camper-list" id="liveCampers">
+      <!-- rendered by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- Activity Ticker -->
+<div class="live-ticker">
+  <div class="ticker-label">
+    <span style="width:6px;height:6px;background:var(--magic-green);border-radius:50%;display:inline-block;animation:pip 2s ease-in-out infinite"></span>
+    LIVE
+  </div>
+  <div class="ticker-track">
+    <div class="ticker-inner" id="tickerInner">
+      <!-- activities -->
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+async function render() {
+  const teams   = await DB.getTeams().sort((a,b) => b.score - a.score);
+  const campers = await DB.getCampers().sort((a,b) => (b.score||0) - (a.score||0));
+  const max     = teams[0]?.score || 1;
+  const medalClass = ['r1','r2','r3',''];
+  const rankPfx    = ['medal-r1','medal-r2','medal-r3',''];
+
+  // ── Team Bars ──
+  document.getElementById('liveTeams').innerHTML = teams.map((t,i) => `
+    <div class="live-team-row">
+      <div class="live-rank-num ${medalClass[i]}">${i+1}</div>
+      <div class="live-team-body">
+        <div class="live-team-name ${rankPfx[i]}" style="color:${t.color}">${t.icon} ${t.name}</div>
+        <div class="live-bar-track">
+          <div class="live-bar-fill" style="width:${(t.score/max*100).toFixed(1)}%;background:${t.color}"></div>
+        </div>
+      </div>
+      <div class="live-team-score" style="color:${t.color}">${t.score.toLocaleString()}</div>
+    </div>`).join('');
+
+  // ── Campers (top 8) ──
+  const top8 = campers.slice(0, 8);
+  document.getElementById('liveCampers').innerHTML = top8.map((c,i) => {
+    const team = await DB.getTeam(c.teamId);
+    const badges = (c.badges||[]).slice(0,4);
+    const badgeEmojis = DEFAULT_BADGES.filter(b=>badges.includes(b.id)).map(b=>b.emoji).join('');
+    return `
+      <div class="live-camper-row ${i===0?'top1':''}">
+        <div class="live-cr-rank ${i<3?'top':''}">${i+1}</div>
+        <div class="live-cr-avatar" style="background:${team?.color||'#333'}22;color:${team?.color||'#aaa'};border-color:${team?.color||'#555'}50">
+          ${c.name.charAt(0)}
+        </div>
+        <div>
+          <div class="live-cr-name">${c.name}</div>
+          <div class="live-cr-team" style="color:${team?.color}">${team?.name||''}</div>
+        </div>
+        <div class="live-cr-badges">${badgeEmojis}</div>
+        <div class="live-cr-score" style="color:${team?.color||'var(--gold)'}">${(c.score||0).toLocaleString()}</div>
+      </div>`;
+  }).join('') || '<div style="color:var(--text-shadow);text-align:center;padding:40px;font-size:14px;">ยังไม่มีน้องลงทะเบียน</div>';
+
+  // ── Ticker ──
+  const acts = await DB.getActivities().slice(0, 10);
+  if (acts.length) {
+    document.getElementById('tickerInner').innerHTML = [...acts, ...acts].map(a =>
+      `<span class="ticker-item">${a.text} &nbsp;·&nbsp; </span>`).join('');
+  }
+
+  // ── Countdown ──
+  const secs = await DB.getCountdownRemaining();
+  if (secs !== null) {
+    document.getElementById('countdownBlock').style.visibility = 'visible';
+    const { label } = await DB.getCountdown();
+    document.getElementById('liveTimerLabel').textContent = label || 'เหลือเวลา';
+    const h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60), s = secs%60;
+    document.getElementById('liveTimer').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  } else {
+    document.getElementById('countdownBlock').style.visibility = 'hidden';
+  }
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+  else document.exitFullscreen?.();
+}
+
+// Initial render + auto-refresh every 5s
+render();
+setInterval(render, 5000);
+// Countdown tick every second
+setInterval(() => {
+  const secs = await DB.getCountdownRemaining();
+  if (secs === null) { document.getElementById('countdownBlock').style.visibility='hidden'; return; }
+  document.getElementById('countdownBlock').style.visibility='visible';
+  const h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60), s = secs%60;
+  document.getElementById('liveTimer').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}, 1000);
+</script>
+</body>
+</html>

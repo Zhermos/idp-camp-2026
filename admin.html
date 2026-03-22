@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDP CAMP 2026 — Admin</title>
+<link rel="stylesheet" href="style.css">
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- LOGIN -->
+  <div id="loginWrap">
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-rune">👑</div>
+        <div class="login-logo">ADMIN</div>
+        <div class="login-sub">IDP CAMP · CONTROL</div>
+        <div class="form-group mt-16">
+          <label class="form-label">Admin PIN</label>
+          <input class="form-input" id="pinInput" type="password" placeholder="กรอก PIN..." maxlength="10"
+                 onkeydown="if(event.key==='Enter') adminLogin()">
+        </div>
+        <button class="btn btn-primary btn-full mt-8" onclick="(async()=>{ adminLogin() })()">🔓 เข้าสู่ระบบ</button>
+        <div style="margin-top:16px;text-align:center;font-size:11px;color:var(--text-shadow)">PIN เริ่มต้น: 9999</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="appWrap" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+
+    <header class="header">
+      <div class="header-left">
+        <div class="logo"><span class="logo-main">IDP CAMP</span><span class="logo-sub">IDP CAMP · 2026</span></div>
+      </div>
+      <div class="header-right">
+        <span class="role-chip admin">👑 ADMIN</span>
+        <button class="btn btn-ghost btn-sm" onclick="(async()=>{ logout() })()">ออก</button>
+      </div>
+    </header>
+
+    <div class="app-body" style="flex:1;overflow:hidden">
+      <nav class="sidebar">
+        <div class="sidebar-crest">👑</div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-label">Admin Panel</div>
+          <div class="nav-item active" data-page="quests"  onclick="(async()=>{ navigate('quests') })()"> <span class="nav-icon">⚔️</span><span>ภารกิจ</span></div>
+          <div class="nav-item"        data-page="timer"   onclick="(async()=>{ navigate('timer') })()">  <span class="nav-icon">⏱</span><span>Timer</span></div>
+          <div class="nav-item"        data-page="roles"   onclick="(async()=>{ navigate('roles') })()">  <span class="nav-icon">🛡</span><span>Role Management</span></div>
+          <div class="nav-item"        data-page="teams"   onclick="(async()=>{ navigate('teams') })()">  <span class="nav-icon">🔴</span><span>จัดการทีม</span></div>
+          <div class="nav-item"        data-page="export"  onclick="(async()=>{ navigate('export') })()"> <span class="nav-icon">📊</span><span>Export / Reset</span></div>
+          <div class="nav-item"        data-page="qrgen"   onclick="(async()=>{ navigate('qrgen') })()">  <span class="nav-icon">📱</span><span>QR Codes</span></div>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-section"><div class="sidebar-section-label">คะแนนทีม</div></div>
+        <div class="teams-mini" id="teamsMini"></div>
+        <div class="sidebar-footer"><div class="sidebar-quote">"Even gods are bound by fate" · IDP 2026</div></div>
+      </nav>
+
+      <main class="main-content">
+
+        <!-- QUEST CREATOR -->
+        <div class="page active" id="page-quests">
+          <div class="page-header">
+            <h1 class="page-title">⚔️ ภารกิจทั้งหมด</h1>
+            <p class="page-subtitle">สร้าง แก้ไข หรือปิดภารกิจ</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><span class="card-title">✦ สร้างภารกิจใหม่</span></div>
+            <div class="card-body">
+              <div class="form-row">
+                <div class="form-group" style="flex:.3">
+                  <label class="form-label">ไอคอน</label>
+                  <input class="form-input" id="qIcon" placeholder="🎯" maxlength="2" style="text-align:center;font-size:20px">
+                </div>
+                <div class="form-group" style="flex:2">
+                  <label class="form-label">ชื่อภารกิจ</label>
+                  <input class="form-input" id="qName" placeholder="ชื่อภารกิจ...">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">คำอธิบาย</label>
+                <textarea class="form-textarea" id="qDesc" placeholder="รายละเอียดภารกิจ..." style="min-height:60px"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">คะแนน</label>
+                  <input class="form-input" id="qPoints" type="number" placeholder="100" min="0">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">ประเภท</label>
+                  <select class="form-select" id="qType">
+                    <option value="main">⭐ ภารกิจหลัก</option>
+                    <option value="side">📌 ภารกิจรอง</option>
+                    <option value="bonus">🎁 โบนัส</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">ประเภทหลักฐาน</label>
+                  <select class="form-select" id="qEvidence">
+                    <option value="image">รูปภาพ</option>
+                    <option value="video">วิดีโอ</option>
+                    <option value="both">รูป/วิดีโอ</option>
+                  </select>
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="(async()=>{ createQuest() })()">✦ สร้างภารกิจ</button>
+            </div>
+          </div>
+
+          <div class="card mt-16">
+            <div class="card-header"><span class="card-title">📋 ภารกิจทั้งหมด</span><span class="card-meta" id="questCountLabel"></span></div>
+            <div class="card-body" style="padding:0">
+              <table class="data-table">
+                <thead><tr><th>ไอคอน</th><th>ชื่อ</th><th>ประเภท</th><th>คะแนน</th><th>หลักฐาน</th><th>สถานะ</th><th></th></tr></thead>
+                <tbody id="questsTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TIMER CONTROL -->
+        <div class="page" id="page-timer">
+          <div class="page-header">
+            <h1 class="page-title">⏱ Global Timer</h1>
+            <p class="page-subtitle">ตั้งเวลานับถอยหลังสำหรับกิจกรรม</p>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">⏱ ตั้งค่า Countdown</span></div>
+            <div class="card-body">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">ชั่วโมง</label>
+                  <input class="form-input" id="timerH" type="number" min="0" max="24" value="2">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">นาที</label>
+                  <input class="form-input" id="timerM" type="number" min="0" max="59" value="30">
+                </div>
+                <div class="form-group" style="flex:2">
+                  <label class="form-label">ป้ายกำกับ</label>
+                  <input class="form-input" id="timerLabel" value="เหลือเวลา" placeholder="เช่น เหลือเวลา">
+                </div>
+              </div>
+              <div style="display:flex;gap:10px">
+                <button class="btn btn-primary" onclick="setTimer()">⏱ เริ่มนับถอยหลัง</button>
+                <button class="btn btn-danger"  onclick="clearTimer()">⏹ หยุด Timer</button>
+              </div>
+            </div>
+          </div>
+          <div class="card mt-16">
+            <div class="card-header"><span class="card-title">สถานะปัจจุบัน</span></div>
+            <div class="card-body" style="text-align:center;padding:32px">
+              <div id="timerPreview" style="font-family:var(--font-title);font-size:52px;font-weight:900;color:var(--gold-bright);text-shadow:0 0 30px rgba(193,155,75,.4);letter-spacing:4px">--:--:--</div>
+              <div id="timerLabelPreview" style="font-family:var(--font-title);font-size:12px;letter-spacing:2px;color:var(--text-shadow);margin-top:8px"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROLE MANAGEMENT -->
+        <div class="page" id="page-roles">
+          <div class="page-header">
+            <h1 class="page-title">🛡 Role Management</h1>
+            <p class="page-subtitle">จัดการพี่สต๊าฟและสิทธิ์การเข้าถึง</p>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">✦ เพิ่มสต๊าฟใหม่</span></div>
+            <div class="card-body">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">ชื่อ</label>
+                  <input class="form-input" id="staffName" placeholder="ชื่อพี่สต๊าฟ">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">PIN</label>
+                  <input class="form-input" id="staffPin" type="password" placeholder="PIN 4 ตัว" maxlength="10">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Role</label>
+                  <select class="form-select" id="staffRole">
+                    <option value="staff">🛠 Staff</option>
+                    <option value="admin">👑 Admin</option>
+                  </select>
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="(async()=>{ addStaff() })()">✦ เพิ่มสต๊าฟ</button>
+            </div>
+          </div>
+          <div class="card mt-16">
+            <div class="card-header"><span class="card-title">📋 รายชื่อสต๊าฟ</span></div>
+            <div class="card-body" style="padding:0">
+              <table class="data-table">
+                <thead><tr><th>ชื่อ</th><th>Role</th><th>PIN</th><th></th></tr></thead>
+                <tbody id="staffTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TEAM MANAGEMENT -->
+        <div class="page" id="page-teams">
+          <div class="page-header">
+            <h1 class="page-title">🔴 จัดการทีม</h1>
+            <p class="page-subtitle">แก้ไขชื่อทีมและสีประจำทีม</p>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">⚙ ตั้งค่าทีม</span></div>
+            <div class="card-body">
+              <div id="teamSettingsGrid" style="display:flex;flex-direction:column;gap:12px"></div>
+              <button class="btn btn-primary mt-16" onclick="(async()=>{ saveTeams() })()">💾 บันทึกทีม</button>
+            </div>
+          </div>
+          <div class="card mt-16">
+            <div class="card-header"><span class="card-title">📊 สมาชิกทีม</span></div>
+            <div class="card-body" style="padding:0">
+              <table class="data-table" id="teamMembersTable">
+                <thead><tr><th>ชื่อ</th><th>ทีม</th><th>คะแนน</th><th>ภารกิจ</th></tr></thead>
+                <tbody id="allMembersBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- EXPORT / RESET -->
+        <div class="page" id="page-export">
+          <div class="page-header">
+            <h1 class="page-title">📊 Export & Reset</h1>
+            <p class="page-subtitle">ดึงข้อมูลและจัดการระบบ</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><span class="card-title">📥 Export ข้อมูล</span></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+                <button class="btn btn-primary btn-full" onclick="(async()=>{ exportCSV() })()">📊 Download CSV (คะแนนทั้งหมด)</button>
+                <button class="btn btn-ghost btn-full"   onclick="(async()=>{ exportJSON() })()">📄 Download JSON (ข้อมูลดิบ)</button>
+                <div style="font-size:11px;color:var(--text-shadow);line-height:1.6">ไฟล์ CSV ประกอบด้วย: คะแนนทีม, คะแนนรายบุคคล, และรายการ Submissions ทั้งหมด</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><span class="card-title" style="color:#f87171">⚠️ Reset ระบบ</span></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+                <button class="btn btn-danger btn-full" onclick="(async()=>{ confirmReset('scores') })()">🔄 Reset คะแนน (คงน้องไว้)</button>
+                <button class="btn btn-danger btn-full" onclick="(async()=>{ confirmReset('all') })()" style="background:rgba(192,57,43,.2)">💣 Reset ทั้งหมด (ล้างสมบูรณ์)</button>
+                <div style="font-size:11px;color:var(--text-shadow);line-height:1.6">Reset คะแนน: ล้างคะแนน + submissions ทั้งหมด แต่คงน้องและภารกิจไว้<br>Reset ทั้งหมด: ล้าง localStorage ทั้งหมด (ไม่สามารถกู้คืนได้)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary preview -->
+          <div class="card mt-16">
+            <div class="card-header"><span class="card-title">📋 สรุปข้อมูล</span></div>
+            <div class="card-body" id="summaryPreview"></div>
+          </div>
+        </div>
+
+        <!-- QR GENERATOR -->
+        <div class="page" id="page-qrgen">
+          <div class="page-header">
+            <h1 class="page-title">📱 QR Codes</h1>
+            <p class="page-subtitle">สร้าง QR สำหรับแจกน้องและสต๊าฟ</p>
+          </div>
+          <div style="text-align:center;padding:40px;background:var(--bg-cell);border:1px solid var(--border-iron);border-radius:var(--r-xl)">
+            <div style="font-size:48px;margin-bottom:16px">📱</div>
+            <div style="font-family:var(--font-title);font-size:18px;letter-spacing:1px;color:var(--gold-bright);margin-bottom:8px">เปิดหน้า QR Generator</div>
+            <div style="font-size:13px;color:var(--text-shadow);margin-bottom:24px">หน้านี้สร้าง QR Code ครบทุกทีมและสต๊าฟ พร้อมปุ่มพิมพ์</div>
+            <a class="btn btn-primary" href="index.html" target="_blank">📱 เปิด QR Generator →</a>
+          </div>
+        </div>
+
+      </main>
+
+      <aside class="activity-panel">
+        <div class="activity-header"><span class="live-pip"></span>ACTIVITY</div>
+        <div class="activity-feed" id="activityFeed"></div>
+      </aside>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <div class="modal-rune">⚠️</div>
+    <div class="modal-title" id="confirmTitle">ยืนยัน?</div>
+    <div class="modal-subtitle" id="confirmSub"></div>
+    <div class="modal-actions mt-16">
+      <button class="btn btn-ghost" onclick="document.getElementById('confirmModal').classList.remove('open')">ยกเลิก</button>
+      <button class="btn btn-danger" id="confirmOkBtn">ยืนยัน</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="data.js"></script>
+<script>
+// ── LOGIN ─────────────────────────
+async function adminLogin() {
+  const pin  = document.getElementById('pinInput').value.trim();
+  const staff = await DB.getStaff().find(s => s.pin === pin && s.role === 'admin');
+  if (!staff) { showToast('PIN ไม่ถูกต้องหรือไม่มีสิทธิ์ Admin', 'error'); return; }
+  document.getElementById('loginWrap').style.display = 'none';
+  const appWrap = document.getElementById('appWrap');
+  appWrap.style.display = 'flex';
+  initApp();
+}
+
+async function logout() {
+  document.getElementById('appWrap').style.display  = 'none';
+  document.getElementById('loginWrap').style.display = 'flex';
+  document.getElementById('loginWrap').style.flexDirection = 'column';
+  document.getElementById('pinInput').value = '';
+}
+
+// ── INIT ──────────────────────────
+async function initApp() {
+  renderSidebar();
+  renderQuestsPage();
+  renderActivity();
+  startTimerPreview();
+  setInterval(()=>{ renderActivity(); renderSidebar(); }, 10000);
+}
+
+// ── SIDEBAR ───────────────────────
+async function renderSidebar() {
+  document.getElementById('teamsMini').innerHTML = await DB.getTeams().sort((a,b)=>b.score-a.score).map(t=>`
+    <div class="team-mini-item">
+      <div class="team-mini-dot" style="background:${t.color}"></div>
+      <span style="flex:1">${t.name}</span>
+      <span class="team-mini-score">${t.score.toLocaleString()}</span>
+    </div>`).join('');
+}
+
+// ── NAVIGATE ──────────────────────
+async function navigate(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page)?.classList.add('active');
+  document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
+  const map = { quests:renderQuestsPage, roles:renderRolesPage, teams:renderTeamsPage, export:renderExportPage };
+  if (map[page]) map[page]();
+}
+
+// ── QUESTS ────────────────────────
+async function renderQuestsPage() {
+  const quests = await DB.getQuests();
+  document.getElementById('questCountLabel').textContent = `${quests.length} ภารกิจ`;
+  const typeLabel = {main:'ภารกิจหลัก', side:'ภารกิจรอง', bonus:'โบนัส'};
+  document.getElementById('questsTable').innerHTML = quests.map(q=>`
+    <tr id="qrow-${q.id}">
+      <td style="font-size:20px;text-align:center">${q.icon}</td>
+      <td><b style="font-family:var(--font-title);font-size:13px">${q.name}</b></td>
+      <td><span class="quest-type-tag ${q.type}" style="display:inline">${typeLabel[q.type]}</span></td>
+      <td style="font-family:var(--font-mono);color:var(--gold)">${q.points}</td>
+      <td style="font-size:11px;color:var(--text-shadow)">${q.evidence}</td>
+      <td>
+        <span style="font-size:11px;padding:2px 8px;border-radius:10px;${q.active?'background:rgba(34,197,94,.1);color:var(--magic-green)':'background:rgba(192,57,43,.1);color:#f87171'}">
+          ${q.active?'เปิด':'ปิด'}
+        </span>
+      </td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="(async()=>{ toggleQuest(${q.id}) })()">${q.active?'ปิด':'เปิด'}</button>
+        <button class="btn btn-danger btn-sm" onclick="(async()=>{ deleteQuest(${q.id}) })()">ลบ</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-shadow);padding:20px">ไม่มีภารกิจ</td></tr>';
+}
+
+async function createQuest() {
+  const name = document.getElementById('qName').value.trim();
+  const pts  = parseInt(document.getElementById('qPoints').value);
+  if (!name || isNaN(pts)) { showToast('กรุณากรอกชื่อและคะแนน','error'); return; }
+  await DB.addQuest({
+    icon:     document.getElementById('qIcon').value || '⭐',
+    name,
+    desc:     document.getElementById('qDesc').value.trim(),
+    points:   pts,
+    type:     document.getElementById('qType').value,
+    evidence: document.getElementById('qEvidence').value,
+    active:   true,
+  });
+  // Clear
+  ['qIcon','qName','qDesc','qPoints'].forEach(id=>document.getElementById(id).value='');
+  renderQuestsPage();
+  showToast('✦ สร้างภารกิจแล้ว', 'success');
+}
+
+async function toggleQuest(id) {
+  const quests = await DB.getQuests();
+  const q = quests.find(x=>x.id===id);
+  if (q) { q.active = !q.active; await DB.saveQuests(quests); }
+  renderQuestsPage();
+}
+
+async function deleteQuest(id) {
+  await DB.deleteQuest(id);
+  renderQuestsPage();
+  showToast('ลบภารกิจแล้ว');
+}
+
+// ── TIMER ──────────────────────────
+function setTimer() {
+  const h   = parseInt(document.getElementById('timerH').value)||0;
+  const m   = parseInt(document.getElementById('timerM').value)||0;
+  const lbl = document.getElementById('timerLabel').value.trim();
+  if (h===0 && m===0) { showToast('กรอกเวลา','error'); return; }
+  await await DB.setCountdown(h, m, lbl);
+  showToast(`⏱ ตั้ง Timer ${h}h ${m}m แล้ว`, 'success');
+}
+
+function clearTimer() {
+  await DB.clearCountdown();
+  showToast('⏹ หยุด Timer แล้ว');
+}
+
+function startTimerPreview() {
+  const el  = document.getElementById('timerPreview');
+  const lbl = document.getElementById('timerLabelPreview');
+  setInterval(()=>{
+    const s = await DB.getCountdownRemaining();
+    if (s === null) { el.textContent='--:--:--'; lbl.textContent='ไม่ได้ตั้ง Timer'; return; }
+    lbl.textContent = await DB.getCountdown().label || 'เหลือเวลา';
+    el.textContent  = `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  }, 1000);
+}
+
+// ── ROLES ──────────────────────────
+async function renderRolesPage() {
+  const staff = await DB.getStaff();
+  document.getElementById('staffTable').innerHTML = staff.map(s=>`
+    <tr>
+      <td style="font-family:var(--font-title);font-size:13px">${s.name}</td>
+      <td><span class="role-chip ${s.role}" style="display:inline">${s.role==='admin'?'👑 Admin':'🛠 Staff'}</span></td>
+      <td style="font-family:var(--font-mono);font-size:12px;color:var(--text-shadow)">${'•'.repeat(s.pin.length)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="(async()=>{ removeStaff('${s.id}') })()" ${s.id==='admin1'?'disabled title="Admin หลักลบไม่ได้"':''}>ลบ</button></td>
+    </tr>`).join('');
+}
+
+async function addStaff() {
+  const name = document.getElementById('staffName').value.trim();
+  const pin  = document.getElementById('staffPin').value.trim();
+  const role = document.getElementById('staffRole').value;
+  if (!name || !pin) { showToast('กรอกชื่อและ PIN','error'); return; }
+  if (await DB.getStaff().find(s=>s.pin===pin)) { showToast('PIN นี้ถูกใช้แล้ว','error'); return; }
+  await DB.addStaff({ name, pin, role });
+  document.getElementById('staffName').value = '';
+  document.getElementById('staffPin').value  = '';
+  renderRolesPage();
+  showToast(`✦ เพิ่ม ${name} แล้ว`, 'success');
+}
+
+async function removeStaff(id) {
+  await DB.removeStaff(id);
+  renderRolesPage();
+  showToast('ลบสต๊าฟแล้ว');
+}
+
+// ── TEAMS ──────────────────────────
+async function renderTeamsPage() {
+  const teams = await DB.getTeams();
+  document.getElementById('teamSettingsGrid').innerHTML = teams.map(t=>`
+    <div style="display:flex;align-items:center;gap:12px;background:var(--bg-block);padding:12px 16px;border-radius:var(--r-lg);border:1px solid var(--border-iron)">
+      <input type="text" value="${t.icon}" id="ticon-${t.id}" style="width:40px;text-align:center;font-size:20px;background:var(--bg-input);border:1px solid var(--border-iron);border-radius:var(--r-sm);padding:4px;color:var(--text-parchment)">
+      <input type="text" value="${t.name}" id="tname-${t.id}" class="form-input" style="flex:1">
+      <input type="color" value="${t.color}" id="tcolor-${t.id}" style="width:40px;height:36px;border:none;background:transparent;cursor:pointer">
+      <span style="font-family:var(--font-mono);font-size:13px;color:var(--gold);min-width:70px;text-align:right">${t.score.toLocaleString()} pt</span>
+    </div>`).join('');
+
+  // Members table
+  const campers = await DB.getCampers().sort((a,b)=>(b.score||0)-(a.score||0));
+  const subs = await DB.getSubmissions();
+  document.getElementById('allMembersBody').innerHTML = campers.map(c=>{
+    const team = teams.find(t=>t.id===c.teamId);
+    const done = subs.filter(s=>s.camperId===c.id&&s.status==='approved').length;
+    return `<tr>
+      <td>${c.name}</td>
+      <td style="color:${team?.color}">${team?.name||'—'}</td>
+      <td style="font-family:var(--font-mono);color:var(--gold)">${(c.score||0).toLocaleString()}</td>
+      <td style="color:var(--magic-green)">${done}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-shadow);padding:20px">ยังไม่มีน้องลงทะเบียน</td></tr>';
+}
+
+async function saveTeams() {
+  const teams = await DB.getTeams().map(t=>({
+    ...t,
+    icon:  document.getElementById('ticon-'+t.id)?.value || t.icon,
+    name:  document.getElementById('tname-'+t.id)?.value || t.name,
+    color: document.getElementById('tcolor-'+t.id)?.value || t.color,
+  }));
+  await DB.saveTeams(teams);
+  renderSidebar();
+  showToast('💾 บันทึกทีมแล้ว', 'success');
+}
+
+// ── EXPORT / RESET ─────────────────
+async function renderExportPage() {
+  const teams   = await DB.getTeams().sort((a,b)=>b.score-a.score);
+  const campers = await DB.getCampers();
+  const subs    = await DB.getSubmissions();
+  document.getElementById('summaryPreview').innerHTML = `
+    <div class="grid-4">
+      ${[{l:'ทีมทั้งหมด',v:teams.length,c:'var(--gold)'},{l:'น้องลงทะเบียน',v:campers.length,c:'var(--magic-blue)'},{l:'งานส่งทั้งหมด',v:subs.length,c:'var(--magic-green)'},{l:'รอตรวจ',v:subs.filter(s=>s.status==='pending').length,c:'#f87171'}].map(x=>`
+        <div style="background:var(--bg-block);border:1px solid var(--border-iron);border-radius:var(--r-lg);padding:16px;text-align:center">
+          <div style="font-family:var(--font-title);font-size:30px;font-weight:700;color:${x.c}">${x.v}</div>
+          <div style="font-size:11px;color:var(--text-shadow);margin-top:4px">${x.l}</div>
+        </div>`).join('')}
+    </div>
+    <div style="margin-top:16px">
+      ${teams.map(t=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border-iron)">
+          <div style="width:8px;height:8px;border-radius:2px;background:${t.color}"></div>
+          <span style="flex:1;font-family:var(--font-title);font-size:13px">${t.name}</span>
+          <span style="font-family:var(--font-mono);font-size:13px;color:${t.color}">${t.score.toLocaleString()} pt</span>
+          <span style="font-size:11px;color:var(--text-shadow)">${campers.filter(c=>c.teamId===t.id).length} คน</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+async function exportCSV() {
+  const csv  = await DB.exportCSV();
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'idp_camp_scores.csv'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('📊 Download CSV แล้ว', 'success');
+}
+
+async function exportJSON() {
+  const data = {
+    teams:       await DB.getTeams(),
+    quests:      await DB.getQuests(),
+    campers:     await DB.getCampers(),
+    submissions: await DB.getSubmissions(),
+    exportedAt:  new Date().toISOString(),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'idp_camp_data.json'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('📄 Download JSON แล้ว', 'success');
+}
+
+async function confirmReset(type) {
+  const titles = { scores:'Reset คะแนนทั้งหมด?', all:'Reset ทั้งหมด?' };
+  const subs   = { scores:'ลบคะแนน + submissions ทั้งหมด (ข้อมูลน้องและภารกิจยังอยู่)', all:'ล้าง localStorage ทั้งหมด ไม่สามารถกู้คืนได้!' };
+  document.getElementById('confirmTitle').textContent = titles[type];
+  document.getElementById('confirmSub').textContent   = subs[type];
+  document.getElementById('confirmOkBtn').onclick = () => {
+    if (type==='scores') await DB.resetScoresOnly();
+    else await DB.resetAll();
+    document.getElementById('confirmModal').classList.remove('open');
+    renderSidebar(); renderExportPage();
+    showToast(type==='all'?'💣 Reset สมบูรณ์':'🔄 Reset คะแนนแล้ว', type==='all'?'error':'success');
+  };
+  document.getElementById('confirmModal').classList.add('open');
+}
+
+// ── ACTIVITY ──────────────────────
+async function renderActivity() {
+  document.getElementById('activityFeed').innerHTML = await DB.getActivities().slice(0,20).map(a=>`
+    <div class="activity-item"><div>${a.text}</div><div class="activity-time">${a.time}</div></div>`).join('');
+}
+
+function showToast(msg, type='') {
+  const c=document.getElementById('toastContainer');
+  const t=document.createElement('div'); t.className='toast '+type; t.innerHTML=msg; c.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(20px)'; setTimeout(()=>t.remove(),300); },3000);
+}
+
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+</script>
+</body>
+</html>
