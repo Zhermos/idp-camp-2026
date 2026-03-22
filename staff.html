@@ -314,12 +314,16 @@ async function logout() {
 
 // ── INIT ──────────────────────────
 async function initApp() {
-  renderSidebar();
-  renderReviewQueue();
-  renderActivity();
-  startCountdown();
+  await renderSidebar();
+  await renderReviewQueue();
+  await renderActivity();
+  await startCountdown();
   setupOffline();
-  setInterval(() => { renderActivity(); renderSidebar(); if(document.getElementById('page-review').classList.contains('active')) renderReviewQueue(); }, 8000);
+  setInterval(async () => {
+    await renderActivity();
+    await renderSidebar();
+    if(document.getElementById('page-review').classList.contains('active')) await renderReviewQueue();
+  }, 8000);
 }
 
 // ── SIDEBAR ───────────────────────
@@ -347,14 +351,14 @@ async function navigate(page) {
     leaderboard: renderLeaderboard,
     liveboard: renderLiveboard,
   };
-  if (map[page]) map[page]();
+  if (map[page]) await map[page]();
 }
 
 
 // Helper: build media viewer HTML
 function buildMediaViewer(s) {
   if (!s.fileUrl) {
-    return `${buildMediaViewer(s)}`;
+    return `<div class="review-media"><span style="font-size:28px">📝</span><span>ไม่มีไฟล์แนบ</span></div>`;
   }
   if (s.fileType === 'video') {
     return `<div class="review-media" style="height:auto;padding:0;overflow:hidden;border-radius:var(--r-lg)">
@@ -612,7 +616,7 @@ async function showScannerResult(camperId) {
   document.getElementById('scanSearch').value = '';
 }
 
-function openScannerPointModal() {
+async function openScannerPointModal() {
   if (!scannerCamperId) return;
   const camper = await DB.getCamper(scannerCamperId);
   const team   = await DB.getTeam(camper?.teamId);
