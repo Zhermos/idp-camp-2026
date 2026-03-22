@@ -443,15 +443,15 @@ async function approve(subId) {
 
   await DB.pushActivity(`✅ <b style="color:${team?.color}">${camper?.name}</b> ผ่านภารกิจ "${sub.questName}" +${sub.questPoints}pt`);
   if (newBadges.length) {
-    newBadges.forEach(b => {
-      await DB.pushActivity(`${b.emoji} <b style="color:var(--gold-bright)">${camper?.name}</b> ได้รับ Badge <b>${b.name}</b>!`);
-    });
+    await Promise.all(newBadges.map(b =>
+      DB.pushActivity(`${b.emoji} <b style="color:var(--gold-bright)">${camper?.name}</b> ได้รับ Badge <b>${b.name}</b>!`)
+    ));
     showBadgeNotification(newBadges[0], camper?.name);
   }
 
   document.getElementById('review-'+subId)?.classList.add('processed');
-  renderSidebar();
-  renderActivity();
+  await renderSidebar();
+  await renderActivity();
   const badgeMsg = newBadges.length ? ` · 🏅 ${newBadges.map(b=>b.name).join(', ')}` : '';
   showToast(`✅ อนุมัติแล้ว +${sub.questPoints}pt${badgeMsg}`, 'success');
 }
