@@ -24,7 +24,7 @@
           <input class="form-input" id="pinInput" type="password" placeholder="กรอก PIN..." maxlength="10"
                  onkeydown="if(event.key==='Enter') adminLogin()">
         </div>
-        <button class="btn btn-primary btn-full mt-8" onclick="(async()=>{ adminLogin() })()">🔓 เข้าสู่ระบบ</button>
+        <button class="btn btn-primary btn-full mt-8" onclick="(async()=>{ await adminLogin() })()">🔓 เข้าสู่ระบบ</button>
         <div style="margin-top:16px;text-align:center;font-size:11px;color:var(--text-shadow)">PIN เริ่มต้น: 9999</div>
       </div>
     </div>
@@ -39,7 +39,7 @@
       </div>
       <div class="header-right">
         <span class="role-chip admin">👑 ADMIN</span>
-        <button class="btn btn-ghost btn-sm" onclick="(async()=>{ logout() })()">ออก</button>
+        <button class="btn btn-ghost btn-sm" onclick="(async()=>{ await logout() })()">ออก</button>
       </div>
     </header>
 
@@ -48,12 +48,12 @@
         <div class="sidebar-crest">👑</div>
         <div class="sidebar-section">
           <div class="sidebar-section-label">Admin Panel</div>
-          <div class="nav-item active" data-page="quests"  onclick="(async()=>{ navigate('quests') })()"> <span class="nav-icon">⚔️</span><span>ภารกิจ</span></div>
-          <div class="nav-item"        data-page="timer"   onclick="(async()=>{ navigate('timer') })()">  <span class="nav-icon">⏱</span><span>Timer</span></div>
-          <div class="nav-item"        data-page="roles"   onclick="(async()=>{ navigate('roles') })()">  <span class="nav-icon">🛡</span><span>Role Management</span></div>
-          <div class="nav-item"        data-page="teams"   onclick="(async()=>{ navigate('teams') })()">  <span class="nav-icon">🔴</span><span>จัดการทีม</span></div>
-          <div class="nav-item"        data-page="export"  onclick="(async()=>{ navigate('export') })()"> <span class="nav-icon">📊</span><span>Export / Reset</span></div>
-          <div class="nav-item"        data-page="qrgen"   onclick="(async()=>{ navigate('qrgen') })()">  <span class="nav-icon">📱</span><span>QR Codes</span></div>
+          <div class="nav-item active" data-page="quests"  onclick="(async()=>{ await navigate('quests') })()"> <span class="nav-icon">⚔️</span><span>ภารกิจ</span></div>
+          <div class="nav-item"        data-page="timer"   onclick="(async()=>{ await navigate('timer') })()">  <span class="nav-icon">⏱</span><span>Timer</span></div>
+          <div class="nav-item"        data-page="roles"   onclick="(async()=>{ await navigate('roles') })()">  <span class="nav-icon">🛡</span><span>Role Management</span></div>
+          <div class="nav-item"        data-page="teams"   onclick="(async()=>{ await navigate('teams') })()">  <span class="nav-icon">🔴</span><span>จัดการทีม</span></div>
+          <div class="nav-item"        data-page="export"  onclick="(async()=>{ await navigate('export') })()"> <span class="nav-icon">📊</span><span>Export / Reset</span></div>
+          <div class="nav-item"        data-page="qrgen"   onclick="(async()=>{ await navigate('qrgen') })()">  <span class="nav-icon">📱</span><span>QR Codes</span></div>
         </div>
         <div class="sidebar-divider"></div>
         <div class="sidebar-section"><div class="sidebar-section-label">คะแนนทีม</div></div>
@@ -109,7 +109,7 @@
                   </select>
                 </div>
               </div>
-              <button class="btn btn-primary" onclick="(async()=>{ createQuest() })()">✦ สร้างภารกิจ</button>
+              <button class="btn btn-primary" onclick="(async()=>{ await createQuest() })()">✦ สร้างภารกิจ</button>
             </div>
           </div>
 
@@ -188,7 +188,7 @@
                   </select>
                 </div>
               </div>
-              <button class="btn btn-primary" onclick="(async()=>{ addStaff() })()">✦ เพิ่มสต๊าฟ</button>
+              <button class="btn btn-primary" onclick="(async()=>{ await addStaff() })()">✦ เพิ่มสต๊าฟ</button>
             </div>
           </div>
           <div class="card mt-16">
@@ -212,7 +212,7 @@
             <div class="card-header"><span class="card-title">⚙ ตั้งค่าทีม</span></div>
             <div class="card-body">
               <div id="teamSettingsGrid" style="display:flex;flex-direction:column;gap:12px"></div>
-              <button class="btn btn-primary mt-16" onclick="(async()=>{ saveTeams() })()">💾 บันทึกทีม</button>
+              <button class="btn btn-primary mt-16" onclick="(async()=>{ await saveTeams() })()">💾 บันทึกทีม</button>
             </div>
           </div>
           <div class="card mt-16">
@@ -237,16 +237,16 @@
             <div class="card">
               <div class="card-header"><span class="card-title">📥 Export ข้อมูล</span></div>
               <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
-                <button class="btn btn-primary btn-full" onclick="(async()=>{ exportCSV() })()">📊 Download CSV (คะแนนทั้งหมด)</button>
-                <button class="btn btn-ghost btn-full"   onclick="(async()=>{ exportJSON() })()">📄 Download JSON (ข้อมูลดิบ)</button>
+                <button class="btn btn-primary btn-full" onclick="(async()=>{ await exportCSV() })()">📊 Download CSV (คะแนนทั้งหมด)</button>
+                <button class="btn btn-ghost btn-full"   onclick="(async()=>{ await exportJSON() })()">📄 Download JSON (ข้อมูลดิบ)</button>
                 <div style="font-size:11px;color:var(--text-shadow);line-height:1.6">ไฟล์ CSV ประกอบด้วย: คะแนนทีม, คะแนนรายบุคคล, และรายการ Submissions ทั้งหมด</div>
               </div>
             </div>
             <div class="card">
               <div class="card-header"><span class="card-title" style="color:#f87171">⚠️ Reset ระบบ</span></div>
               <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
-                <button class="btn btn-danger btn-full" onclick="(async()=>{ confirmReset('scores') })()">🔄 Reset คะแนน (คงน้องไว้)</button>
-                <button class="btn btn-danger btn-full" onclick="(async()=>{ confirmReset('all') })()" style="background:rgba(192,57,43,.2)">💣 Reset ทั้งหมด (ล้างสมบูรณ์)</button>
+                <button class="btn btn-danger btn-full" onclick="(async()=>{ await confirmReset('scores') })()">🔄 Reset คะแนน (คงน้องไว้)</button>
+                <button class="btn btn-danger btn-full" onclick="(async()=>{ await confirmReset('all') })()" style="background:rgba(192,57,43,.2)">💣 Reset ทั้งหมด (ล้างสมบูรณ์)</button>
                 <div style="font-size:11px;color:var(--text-shadow);line-height:1.6">Reset คะแนน: ล้างคะแนน + submissions ทั้งหมด แต่คงน้องและภารกิจไว้<br>Reset ทั้งหมด: ล้าง localStorage ทั้งหมด (ไม่สามารถกู้คืนได้)</div>
               </div>
             </div>
@@ -303,7 +303,7 @@
 // ── LOGIN ─────────────────────────
 async function adminLogin() {
   const pin  = document.getElementById('pinInput').value.trim();
-  const staff = await DB.getStaff().find(s => s.pin === pin && s.role === 'admin');
+  const staff = (await DB.getStaff()).find(s => s.pin === pin && s.role === 'admin');
   if (!staff) { showToast('PIN ไม่ถูกต้องหรือไม่มีสิทธิ์ Admin', 'error'); return; }
   document.getElementById('loginWrap').style.display = 'none';
   const appWrap = document.getElementById('appWrap');
@@ -324,12 +324,12 @@ async function initApp() {
   renderQuestsPage();
   renderActivity();
   startTimerPreview();
-  setInterval(()=>{ renderActivity(); renderSidebar(); }, 10000);
+  setInterval(async ()=>{ await renderActivity(); await renderSidebar(); }, 10000);
 }
 
 // ── SIDEBAR ───────────────────────
 async function renderSidebar() {
-  document.getElementById('teamsMini').innerHTML = await DB.getTeams().sort((a,b)=>b.score-a.score).map(t=>`
+  document.getElementById('teamsMini').innerHTML = (await DB.getTeams()).sort((a,b)=>b.score-a.score).map(t=>`
     <div class="team-mini-item">
       <div class="team-mini-dot" style="background:${t.color}"></div>
       <span style="flex:1">${t.name}</span>
@@ -365,8 +365,8 @@ async function renderQuestsPage() {
         </span>
       </td>
       <td style="display:flex;gap:6px">
-        <button class="btn btn-ghost btn-sm" onclick="(async()=>{ toggleQuest(${q.id}) })()">${q.active?'ปิด':'เปิด'}</button>
-        <button class="btn btn-danger btn-sm" onclick="(async()=>{ deleteQuest(${q.id}) })()">ลบ</button>
+        <button class="btn btn-ghost btn-sm" onclick="(async()=>{ await toggleQuest(${q.id}) })()">${q.active?'ปิด':'เปิด'}</button>
+        <button class="btn btn-danger btn-sm" onclick="(async()=>{ await deleteQuest(${q.id}) })()">ลบ</button>
       </td>
     </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-shadow);padding:20px">ไม่มีภารกิจ</td></tr>';
 }
@@ -404,27 +404,27 @@ async function deleteQuest(id) {
 }
 
 // ── TIMER ──────────────────────────
-function setTimer() {
+async function setTimer() {
   const h   = parseInt(document.getElementById('timerH').value)||0;
   const m   = parseInt(document.getElementById('timerM').value)||0;
   const lbl = document.getElementById('timerLabel').value.trim();
   if (h===0 && m===0) { showToast('กรอกเวลา','error'); return; }
-  await await DB.setCountdown(h, m, lbl);
+  await DB.setCountdown(h, m, lbl);
   showToast(`⏱ ตั้ง Timer ${h}h ${m}m แล้ว`, 'success');
 }
 
-function clearTimer() {
+async function clearTimer() {
   await DB.clearCountdown();
   showToast('⏹ หยุด Timer แล้ว');
 }
 
-function startTimerPreview() {
+async function startTimerPreview() {
   const el  = document.getElementById('timerPreview');
   const lbl = document.getElementById('timerLabelPreview');
-  setInterval(()=>{
+  setInterval(async () => {
     const s = await DB.getCountdownRemaining();
     if (s === null) { el.textContent='--:--:--'; lbl.textContent='ไม่ได้ตั้ง Timer'; return; }
-    lbl.textContent = await DB.getCountdown().label || 'เหลือเวลา';
+    lbl.textContent = (await DB.getCountdown()).label || 'เหลือเวลา';
     el.textContent  = `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
   }, 1000);
 }
@@ -437,7 +437,7 @@ async function renderRolesPage() {
       <td style="font-family:var(--font-title);font-size:13px">${s.name}</td>
       <td><span class="role-chip ${s.role}" style="display:inline">${s.role==='admin'?'👑 Admin':'🛠 Staff'}</span></td>
       <td style="font-family:var(--font-mono);font-size:12px;color:var(--text-shadow)">${'•'.repeat(s.pin.length)}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="(async()=>{ removeStaff('${s.id}') })()" ${s.id==='admin1'?'disabled title="Admin หลักลบไม่ได้"':''}>ลบ</button></td>
+      <td><button class="btn btn-danger btn-sm" onclick="(async()=>{ await removeStaff('${s.id}') })()" ${s.id==='admin1'?'disabled title="Admin หลักลบไม่ได้"':''}>ลบ</button></td>
     </tr>`).join('');
 }
 
@@ -446,7 +446,7 @@ async function addStaff() {
   const pin  = document.getElementById('staffPin').value.trim();
   const role = document.getElementById('staffRole').value;
   if (!name || !pin) { showToast('กรอกชื่อและ PIN','error'); return; }
-  if (await DB.getStaff().find(s=>s.pin===pin)) { showToast('PIN นี้ถูกใช้แล้ว','error'); return; }
+  if ((await DB.getStaff()).find(s=>s.pin===pin)) { showToast('PIN นี้ถูกใช้แล้ว','error'); return; }
   await DB.addStaff({ name, pin, role });
   document.getElementById('staffName').value = '';
   document.getElementById('staffPin').value  = '';
@@ -472,7 +472,7 @@ async function renderTeamsPage() {
     </div>`).join('');
 
   // Members table
-  const campers = await DB.getCampers().sort((a,b)=>(b.score||0)-(a.score||0));
+  const campers = (await DB.getCampers()).sort((a,b)=>(b.score||0)-(a.score||0));
   const subs = await DB.getSubmissions();
   document.getElementById('allMembersBody').innerHTML = campers.map(c=>{
     const team = teams.find(t=>t.id===c.teamId);
@@ -487,7 +487,7 @@ async function renderTeamsPage() {
 }
 
 async function saveTeams() {
-  const teams = await DB.getTeams().map(t=>({
+  const teams = (await DB.getTeams()).map(t=>({
     ...t,
     icon:  document.getElementById('ticon-'+t.id)?.value || t.icon,
     name:  document.getElementById('tname-'+t.id)?.value || t.name,
@@ -500,7 +500,7 @@ async function saveTeams() {
 
 // ── EXPORT / RESET ─────────────────
 async function renderExportPage() {
-  const teams   = await DB.getTeams().sort((a,b)=>b.score-a.score);
+  const teams   = (await DB.getTeams()).sort((a,b)=>b.score-a.score);
   const campers = await DB.getCampers();
   const subs    = await DB.getSubmissions();
   document.getElementById('summaryPreview').innerHTML = `
@@ -553,7 +553,7 @@ async function confirmReset(type) {
   const subs   = { scores:'ลบคะแนน + submissions ทั้งหมด (ข้อมูลน้องและภารกิจยังอยู่)', all:'ล้าง localStorage ทั้งหมด ไม่สามารถกู้คืนได้!' };
   document.getElementById('confirmTitle').textContent = titles[type];
   document.getElementById('confirmSub').textContent   = subs[type];
-  document.getElementById('confirmOkBtn').onclick = () => {
+  document.getElementById('confirmOkBtn').onclick = async () => {
     if (type==='scores') await DB.resetScoresOnly();
     else await DB.resetAll();
     document.getElementById('confirmModal').classList.remove('open');
@@ -565,7 +565,7 @@ async function confirmReset(type) {
 
 // ── ACTIVITY ──────────────────────
 async function renderActivity() {
-  document.getElementById('activityFeed').innerHTML = await DB.getActivities().slice(0,20).map(a=>`
+  document.getElementById('activityFeed').innerHTML = (await DB.getActivities()).slice(0,20).map(a=>`
     <div class="activity-item"><div>${a.text}</div><div class="activity-time">${a.time}</div></div>`).join('');
 }
 

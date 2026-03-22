@@ -55,7 +55,7 @@
           <label class="form-label">ชื่อของคุณ</label>
           <input class="form-input" id="regName" placeholder="กรอกชื่อ–นามสกุล..." maxlength="40">
         </div>
-        <button class="btn btn-primary btn-full mt-8" onclick="(async()=>{ registerCamper() })()">⚔️ เข้าสู่ค่าย</button>
+        <button class="btn btn-primary btn-full mt-8" onclick="(async()=>{ await registerCamper() })()">⚔️ เข้าสู่ค่าย</button>
         <div style="font-size:11px; color:var(--text-shadow); text-align:center; margin-top:16px;">ชื่อจะถูกจำไว้ในอุปกรณ์นี้</div>
       </div>
     </div>
@@ -69,10 +69,10 @@
       <div class="sidebar-crest">⚡</div>
       <div class="sidebar-section">
         <div class="sidebar-section-label">เมนู</div>
-        <div class="nav-item active" data-page="quests"      onclick="(async()=>{ navigate('quests') })()">      <span class="nav-icon">⚔️</span><span>ภารกิจ</span>        <span class="nav-badge" id="questBadge">0</span></div>
-        <div class="nav-item"        data-page="submissions" onclick="(async()=>{ navigate('submissions') })()"> <span class="nav-icon">📜</span><span>งานของฉัน</span>     <span class="nav-badge" id="pendingBadge" style="display:none">0</span></div>
-        <div class="nav-item"        data-page="leaderboard" onclick="(async()=>{ navigate('leaderboard') })()"> <span class="nav-icon">🏛</span><span>Leaderboard</span></div>
-        <div class="nav-item"        data-page="profile"     onclick="(async()=>{ navigate('profile') })()">     <span class="nav-icon">🦉</span><span>โปรไฟล์</span></div>
+        <div class="nav-item active" data-page="quests"      onclick="(async()=>{ await navigate('quests') })()">      <span class="nav-icon">⚔️</span><span>ภารกิจ</span>        <span class="nav-badge" id="questBadge">0</span></div>
+        <div class="nav-item"        data-page="submissions" onclick="(async()=>{ await navigate('submissions') })()"> <span class="nav-icon">📜</span><span>งานของฉัน</span>     <span class="nav-badge" id="pendingBadge" style="display:none">0</span></div>
+        <div class="nav-item"        data-page="leaderboard" onclick="(async()=>{ await navigate('leaderboard') })()"> <span class="nav-icon">🏛</span><span>Leaderboard</span></div>
+        <div class="nav-item"        data-page="profile"     onclick="(async()=>{ await navigate('profile') })()">     <span class="nav-icon">🦉</span><span>โปรไฟล์</span></div>
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section">
@@ -94,11 +94,11 @@
           <p class="page-subtitle">รับภารกิจ · ส่งหลักฐาน · พิชิตคะแนน</p>
         </div>
         <div class="quest-filters">
-          <button class="filter-btn active" data-filter="all"   onclick="(async()=>{ filterQuests('all',this) })()">ทั้งหมด</button>
-          <button class="filter-btn"        data-filter="main"  onclick="(async()=>{ filterQuests('main',this) })()">⭐ หลัก</button>
-          <button class="filter-btn"        data-filter="side"  onclick="(async()=>{ filterQuests('side',this) })()">📌 รอง</button>
-          <button class="filter-btn"        data-filter="bonus" onclick="(async()=>{ filterQuests('bonus',this) })()">🎁 โบนัส</button>
-          <button class="filter-btn"        data-filter="todo"  onclick="(async()=>{ filterQuests('todo',this) })()">🔵 ยังไม่ส่ง</button>
+          <button class="filter-btn active" data-filter="all"   onclick="(async()=>{ await filterQuests('all',this) })()">ทั้งหมด</button>
+          <button class="filter-btn"        data-filter="main"  onclick="(async()=>{ await filterQuests('main',this) })()">⭐ หลัก</button>
+          <button class="filter-btn"        data-filter="side"  onclick="(async()=>{ await filterQuests('side',this) })()">📌 รอง</button>
+          <button class="filter-btn"        data-filter="bonus" onclick="(async()=>{ await filterQuests('bonus',this) })()">🎁 โบนัส</button>
+          <button class="filter-btn"        data-filter="todo"  onclick="(async()=>{ await filterQuests('todo',this) })()">🔵 ยังไม่ส่ง</button>
         </div>
         <div class="quest-grid" id="questGrid"></div>
       </div>
@@ -204,7 +204,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="(async()=>{ submitWork() })()">📤 ส่งงาน</button>
+      <button class="btn btn-primary" onclick="(async()=>{ await submitWork() })()">📤 ส่งงาน</button>
     </div>
   </div>
 </div>
@@ -335,7 +335,7 @@ async function renderHeader() {
 
 // ── SIDEBAR ───────────────────────
 async function renderSidebar() {
-  const teams = await DB.getTeams().sort((a,b) => b.score - a.score);
+  const teams = (await DB.getTeams()).sort((a,b) => b.score - a.score);
   document.getElementById('teamsMini').innerHTML = teams.map(t => `
     <div class="team-mini-item">
       <div class="team-mini-dot" style="background:${t.color}"></div>
@@ -344,14 +344,14 @@ async function renderSidebar() {
     </div>`).join('');
 
   // Pending badge
-  const pending = await DB.getCamperSubmissions(session.camperId).filter(s => s.status === 'pending').length;
+  const pending = (await DB.getCamperSubmissions(session.camperId)).filter(s => s.status === 'pending').length;
   const pb = document.getElementById('pendingBadge');
   if (pending > 0) { pb.textContent = pending; pb.style.display = 'inline'; }
   else pb.style.display = 'none';
 
   // Quest badge (remaining)
-  const myDone = new Set(await DB.getCamperSubmissions(session.camperId).filter(s=>s.status==='approved').map(s=>s.questId));
-  const remaining = await DB.getQuests().filter(q => q.active && !myDone.has(q.id)).length;
+  const myDone = new Set((await DB.getCamperSubmissions(session.camperId)).filter(s=>s.status==='approved').map(s=>s.questId));
+  const remaining = (await DB.getQuests()).filter(q => q.active && !myDone.has(q.id)).length;
   document.getElementById('questBadge').textContent = remaining;
 }
 
@@ -374,9 +374,9 @@ async function filterQuests(f, btn) {
 }
 
 async function renderQuestGrid(filter = currentFilter) {
-  const myApproved = new Set(await DB.getCamperSubmissions(session.camperId).filter(s=>s.status==='approved').map(s=>s.questId));
-  const myPending  = new Set(await DB.getCamperSubmissions(session.camperId).filter(s=>s.status==='pending').map(s=>s.questId));
-  let quests = await DB.getQuests().filter(q => q.active);
+  const myApproved = new Set((await DB.getCamperSubmissions(session.camperId)).filter(s=>s.status==='approved').map(s=>s.questId));
+  const myPending  = new Set((await DB.getCamperSubmissions(session.camperId)).filter(s=>s.status==='pending').map(s=>s.questId));
+  let quests = (await DB.getQuests()).filter(q => q.active);
   if (filter==='main')  quests = quests.filter(q=>q.type==='main');
   if (filter==='side')  quests = quests.filter(q=>q.type==='side');
   if (filter==='bonus') quests = quests.filter(q=>q.type==='bonus');
@@ -396,7 +396,7 @@ async function renderQuestGrid(filter = currentFilter) {
           <div class="quest-points">⭐ ${q.points} pt</div>
           <div class="quest-type-tag ${q.type}">${typeLabel[q.type]}</div>
         </div>
-        ${!done && !pending ? `<button class="quest-submit-btn" onclick="(async()=>{ openSubmit(${q.id}) })()">📜 ส่งหลักฐาน</button>` : ''}
+        ${!done && !pending ? `<button class="quest-submit-btn" onclick="(async()=>{ await openSubmit(${q.id}) })()">📜 ส่งหลักฐาน</button>` : ''}
       </div>`;
   }).join('') || '<div style="text-align:center;color:var(--text-shadow);padding:40px;font-size:14px;">ไม่มีภารกิจในหมวดนี้</div>';
 }
@@ -404,7 +404,7 @@ async function renderQuestGrid(filter = currentFilter) {
 // ── SUBMIT MODAL ──────────────────
 async function openSubmit(questId) {
   currentQuestId = questId;
-  const q = await DB.getQuests().find(x=>x.id===questId);
+  const q = (await DB.getQuests()).find(x=>x.id===questId);
   if (!q) return;
   document.getElementById('modalQuestName').textContent = q.icon + ' ' + q.name;
   document.getElementById('modalQuestDesc').textContent = 'คะแนน: +' + q.points + ' pt';
@@ -496,7 +496,7 @@ async function renderSubmissions() {
 
 // ── LEADERBOARD ───────────────────
 async function renderLeaderboard() {
-  const teams = await DB.getTeams().sort((a,b)=>b.score-a.score);
+  const teams = (await DB.getTeams()).sort((a,b)=>b.score-a.score);
   const max   = teams[0]?.score || 1;
 
   // Stat cards
@@ -520,7 +520,7 @@ async function renderLeaderboard() {
 
   // Personal leaderboard (own team)
   const team = await DB.getTeam(session.teamId);
-  const campers = await DB.getCampersByTeam(session.teamId).sort((a,b)=>(b.score||0)-(a.score||0));
+  const campers = (await DB.getCampersByTeam(session.teamId)).sort((a,b)=>(b.score||0)-(a.score||0));
   document.getElementById('personalLbTeamName').textContent = team?.name || '';
   document.getElementById('personalLb').innerHTML = campers.length ? campers.map((c,i)=>`
     <div class="personal-lb-item ${c.id===session.camperId?'me':''}">
@@ -543,7 +543,7 @@ async function renderProfile() {
   document.getElementById('profileScore').textContent  = (camper.score||0).toLocaleString();
 
   // Rank in team
-  const campers = await DB.getCampersByTeam(session.teamId).sort((a,b)=>(b.score||0)-(a.score||0));
+  const campers = (await DB.getCampersByTeam(session.teamId)).sort((a,b)=>(b.score||0)-(a.score||0));
   const rank = campers.findIndex(c=>c.id===session.camperId)+1;
   document.getElementById('profileHouse').innerHTML = `<span>🐍</span> ${team.name} · อันดับ #${rank}`;
 

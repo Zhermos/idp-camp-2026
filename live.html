@@ -366,9 +366,11 @@
 <script src="data.js"></script>
 <script>
 async function render() {
-  const teams   = await DB.getTeams().sort((a,b) => b.score - a.score);
-  const campers = await DB.getCampers().sort((a,b) => (b.score||0) - (a.score||0));
-  const max     = teams[0]?.score || 1;
+  const teamsRaw = await DB.getTeams();
+  const teams    = teamsRaw.sort((a,b) => b.score - a.score);
+  const campersRaw = await DB.getCampers();
+  const campers  = campersRaw.sort((a,b) => (b.score||0) - (a.score||0));
+  const max      = teams[0]?.score || 1;
   const medalClass = ['r1','r2','r3',''];
   const rankPfx    = ['medal-r1','medal-r2','medal-r3',''];
 
@@ -385,12 +387,14 @@ async function render() {
       <div class="live-team-score" style="color:${t.color}">${t.score.toLocaleString()}</div>
     </div>`).join('');
 
-  // ── Campers (top 8) ──
+  // ── Campers (top 8) — fetch teams map first ──
+  const teamsMap = {};
+  teams.forEach(t => { teamsMap[t.id] = t; });
   const top8 = campers.slice(0, 8);
   document.getElementById('liveCampers').innerHTML = top8.map((c,i) => {
-    const team = await DB.getTeam(c.teamId);
-    const badges = (c.badges||[]).slice(0,4);
-    const badgeEmojis = DEFAULT_BADGES.filter(b=>badges.includes(b.id)).map(b=>b.emoji).join('');
+    const team = teamsMap[c.teamId];
+    const badgeKeys = c.badges ? Object.keys(c.badges) : [];
+    const badgeEmojis = (window.DEFAULT_BADGES || []).filter(b => badgeKeys.includes(b.id)).map(b => b.emoji).join('');
     return `
       <div class="live-camper-row ${i===0?'top1':''}">
         <div class="live-cr-rank ${i<3?'top':''}">${i+1}</div>
@@ -407,9 +411,9 @@ async function render() {
   }).join('') || '<div style="color:var(--text-shadow);text-align:center;padding:40px;font-size:14px;">ยังไม่มีน้องลงทะเบียน</div>';
 
   // ── Ticker ──
-  const acts = await DB.getActivities().slice(0, 10);
+  const acts = await DB.getActivities();
   if (acts.length) {
-    document.getElementById('tickerInner').innerHTML = [...acts, ...acts].map(a =>
+    document.getElementById('tickerInner').innerHTML = [...acts.slice(0,10), ...acts.slice(0,10)].map(a =>
       `<span class="ticker-item">${a.text} &nbsp;·&nbsp; </span>`).join('');
   }
 
@@ -417,8 +421,8 @@ async function render() {
   const secs = await DB.getCountdownRemaining();
   if (secs !== null) {
     document.getElementById('countdownBlock').style.visibility = 'visible';
-    const { label } = await DB.getCountdown();
-    document.getElementById('liveTimerLabel').textContent = label || 'เหลือเวลา';
+    const cd = await DB.getCountdown();
+    document.getElementById('liveTimerLabel').textContent = cd.label || 'เหลือเวลา';
     const h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60), s = secs%60;
     document.getElementById('liveTimer').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   } else {
@@ -426,16 +430,11 @@ async function render() {
   }
 }
 
-function toggleFullscreen() {
-  if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
-  else document.exitFullscreen?.();
-}
-
 // Initial render + auto-refresh every 5s
 render();
 setInterval(render, 5000);
 // Countdown tick every second
-setInterval(() => {
+setInterval(async () => {
   const secs = await DB.getCountdownRemaining();
   if (secs === null) { document.getElementById('countdownBlock').style.visibility='hidden'; return; }
   document.getElementById('countdownBlock').style.visibility='visible';
