@@ -51,7 +51,7 @@
       <div class="header-right">
         <span class="role-chip staff">🛠 STAFF</span>
         <span id="staffNameChip" style="font-family:var(--font-title);font-size:12px;color:var(--text-stone)"></span>
-        <button class="btn btn-ghost btn-sm" onclick="(async()=>{ await logout() })()">ออก</button>
+        <button class="btn btn-ghost btn-sm" onclick="(async()=>{ logout() })()">ออก</button>
       </div>
     </header>
 
@@ -60,11 +60,11 @@
         <div class="sidebar-crest">🛡</div>
         <div class="sidebar-section">
           <div class="sidebar-section-label">เมนูสต๊าฟ</div>
-          <div class="nav-item active" data-page="review"      onclick="(async()=>{ await navigate('review') })()">     <span class="nav-icon">🔍</span><span>ตรวจงาน</span>      <span class="nav-badge danger" id="reviewBadge">0</span></div>
-          <div class="nav-item"        data-page="points"      onclick="(async()=>{ await navigate('points') })()">     <span class="nav-icon">⚡</span><span>เพิ่ม/ลดคะแนน</span></div>
-          <div class="nav-item"        data-page="scanner"     onclick="(async()=>{ await navigate('scanner') })()">    <span class="nav-icon">📷</span><span>Scanner</span></div>
-          <div class="nav-item"        data-page="leaderboard" onclick="(async()=>{ await navigate('leaderboard') })()"><span class="nav-icon">🏛</span><span>Leaderboard</span></div>
-          <div class="nav-item"        data-page="liveboard"   onclick="(async()=>{ await navigate('liveboard') })()">  <span class="nav-icon">📺</span><span>Live Board</span></div>
+          <div class="nav-item active" data-page="review"      onclick="(async()=>{ navigate('review') })()">     <span class="nav-icon">🔍</span><span>ตรวจงาน</span>      <span class="nav-badge danger" id="reviewBadge">0</span></div>
+          <div class="nav-item"        data-page="points"      onclick="(async()=>{ navigate('points') })()">     <span class="nav-icon">⚡</span><span>เพิ่ม/ลดคะแนน</span></div>
+          <div class="nav-item"        data-page="scanner"     onclick="(async()=>{ navigate('scanner') })()">    <span class="nav-icon">📷</span><span>Scanner</span></div>
+          <div class="nav-item"        data-page="leaderboard" onclick="(async()=>{ navigate('leaderboard') })()"><span class="nav-icon">🏛</span><span>Leaderboard</span></div>
+          <div class="nav-item"        data-page="liveboard"   onclick="(async()=>{ navigate('liveboard') })()">  <span class="nav-icon">📺</span><span>Live Board</span></div>
         </div>
         <div class="sidebar-divider"></div>
         <div class="sidebar-section"><div class="sidebar-section-label">คะแนนทีม</div></div>
@@ -97,7 +97,7 @@
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">ทีม</label>
-                  <select class="form-select" id="ptTeamSel" onchange="(async()=>{ await renderCamperList() })()">
+                  <select class="form-select" id="ptTeamSel" onchange="renderCamperList()">
                     <option value="">— เลือกทีม —</option>
                   </select>
                 </div>
@@ -118,7 +118,7 @@
                   <input class="form-input" id="ptReason" placeholder="เช่น คะแนนระเบียบวินัย">
                 </div>
               </div>
-              <button class="btn btn-primary" onclick="(async()=>{ await addIndividualPoints() })()">⚡ บันทึก</button>
+              <button class="btn btn-primary" onclick="(async()=>{ addIndividualPoints() })()">⚡ บันทึก</button>
             </div>
           </div>
 
@@ -142,7 +142,7 @@
                   <input class="form-input" id="teamPtReason" placeholder="เช่น ชนะเกม">
                 </div>
               </div>
-              <button class="btn btn-primary" onclick="(async()=>{ await addTeamPoints() })()">⚡ บันทึก</button>
+              <button class="btn btn-primary" onclick="(async()=>{ addTeamPoints() })()">⚡ บันทึก</button>
             </div>
           </div>
 
@@ -256,7 +256,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="document.getElementById('rejectModal').classList.remove('open')">ยกเลิก</button>
-      <button class="btn btn-danger" onclick="(async()=>{ await confirmReject() })()">❌ ตีกลับ</button>
+      <button class="btn btn-danger" onclick="(async()=>{ confirmReject() })()">❌ ตีกลับ</button>
     </div>
   </div>
 </div>
@@ -277,7 +277,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="document.getElementById('scannerPointModal').classList.remove('open')">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="(async()=>{ await confirmScannerPoints() })()">⚡ บันทึก</button>
+      <button class="btn btn-primary" onclick="(async()=>{ confirmScannerPoints() })()">⚡ บันทึก</button>
     </div>
   </div>
 </div>
@@ -294,7 +294,7 @@ let scannerStream = null;
 // ── LOGIN ─────────────────────────
 async function staffLogin() {
   const pin  = document.getElementById('pinInput').value.trim();
-  const staff = (await DB.getStaff()).find(s => s.pin === pin);
+  const _staff = await DB.getStaff(); const staff = _staff.find(s => s.pin === pin);
   if (!staff) { showToast('PIN ไม่ถูกต้อง', 'error'); return; }
   staffSession = staff;
   document.getElementById('loginWrap').style.display  = 'none';
@@ -324,14 +324,14 @@ async function initApp() {
 
 // ── SIDEBAR ───────────────────────
 async function renderSidebar() {
-  const teams = (await DB.getTeams()).sort((a,b)=>b.score-a.score);
+  const _t = await DB.getTeams(); const teams = _t.sort((a,b)=>b.score-a.score);
   document.getElementById('teamsMini').innerHTML = teams.map(t=>`
     <div class="team-mini-item">
       <div class="team-mini-dot" style="background:${t.color}"></div>
       <span style="flex:1">${t.name}</span>
       <span class="team-mini-score">${t.score.toLocaleString()}</span>
     </div>`).join('');
-  const pending = (await DB.getPendingSubmissions()).length;
+  const _pending = await DB.getPendingSubmissions(); const pending = _pending.length;
   document.getElementById('reviewBadge').textContent = pending;
 }
 
@@ -375,9 +375,38 @@ async function renderReviewQueue() {
     document.getElementById('reviewQueue').innerHTML = '<div style="text-align:center;color:var(--text-shadow);padding:60px;font-size:14px;">🎉 ไม่มีงานรอตรวจ</div>';
     return;
   }
+  // Fetch all campers/teams in parallel first — no await inside .map()
+  const camperIds = [...new Set(subs.map(s => s.camperId))];
+  const teamIds   = [...new Set(subs.map(s => s.teamId))];
+  const [campersArr, teamsArr] = await Promise.all([
+    Promise.all(camperIds.map(id => DB.getCamper(id))),
+    Promise.all(teamIds.map(id => DB.getTeam(id))),
+  ]);
+  const campersMap = {};
+  campersArr.forEach(c => { if(c) campersMap[c.id] = c; });
+  const teamsMap = {};
+  teamsArr.forEach(t => { if(t) teamsMap[t.id] = t; });
+
   document.getElementById('reviewQueue').innerHTML = subs.map(s => {
-    const camper = await DB.getCamper(s.camperId);
-    const team   = await DB.getTeam(s.teamId);
+    const camper = campersMap[s.camperId];
+    const team   = teamsMap[s.teamId];
+    let mediaHtml = '';
+    if (s.fileUrl) {
+      if (s.fileType === 'video') {
+        mediaHtml = `<div class="review-media" style="height:auto;padding:0;overflow:hidden">
+          <video src="${s.fileUrl}" controls style="width:100%;max-height:260px;background:#000;border-radius:var(--r-lg)"></video>
+        </div>`;
+      } else {
+        mediaHtml = `<div class="review-media" style="height:auto;padding:0;overflow:hidden" onclick="window.open('${s.fileUrl}','_blank')">
+          <img src="${s.fileUrl}" style="width:100%;max-height:260px;object-fit:contain;background:#111;cursor:pointer">
+        </div>`;
+      }
+    } else {
+      mediaHtml = `<div class="review-media">
+        <span style="font-size:28px">📝</span>
+        <span>ไม่มีไฟล์แนบ</span>
+      </div>`;
+    }
     return `
       <div class="review-item" id="review-${s.id}">
         <div class="review-header">
@@ -390,21 +419,18 @@ async function renderReviewQueue() {
           </div>
           <div class="review-time">${new Date(s.createdAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</div>
         </div>
-        <div class="review-media" onclick="showToast('🔍 Media viewer — เชื่อมต่อ backend เพื่อดูไฟล์จริง')">
-          <span style="font-size:28px">${s.fileType==='video'?'🎬':'🖼️'}</span>
-          <span>${s.hasFile?'คลิกเพื่อดูหลักฐาน':'ไม่มีไฟล์แนบ'}</span>
-        </div>
+        ${mediaHtml}
         ${s.desc ? `<div class="review-desc">"${s.desc}"</div>` : ''}
         <div class="review-actions">
           <button class="btn-approve" onclick="(async()=>{ await approve(${s.id}) })()">✅ อนุมัติ +${s.questPoints}pt</button>
-          <button class="btn-reject"  onclick="openReject(${s.id},'${(camper?.name||'?').replace(/'/g,"\\'")}')">❌ ตีกลับ</button>
+          <button class="btn-reject"  onclick="(async()=>{ await openReject(${s.id},'${(camper?.name||'?').replace(/'/g,"\'")}') })()">❌ ตีกลับ</button>
         </div>
       </div>`;
   }).join('');
 }
 
 async function approve(subId) {
-  const sub = (await DB.getSubmissions()).find(s=>s.id===subId);
+  const _subs1 = await DB.getSubmissions(); const sub = _subs1.find(s=>s.id===subId);
   if (!sub) return;
   await DB.updateSubmission(subId, { status:'approved', points:sub.questPoints, reviewedAt:new Date().toISOString() });
   await DB.updateCamperScore(sub.camperId, sub.questPoints);
@@ -457,7 +483,7 @@ async function confirmReject() {
   if (!rejectTargetId) return;
   const reason = document.getElementById('rejectReason').value.trim();
   await DB.updateSubmission(rejectTargetId, { status:'rejected', rejectReason:reason, reviewedAt:new Date().toISOString() });
-  const sub    = (await DB.getSubmissions()).find(s=>s.id===rejectTargetId);
+  const _subs2 = await DB.getSubmissions(); const sub    = _subs2.find(s=>s.id===rejectTargetId);
   const camper = await DB.getCamper(sub?.camperId);
   const team   = await DB.getTeam(sub?.teamId);
   await DB.pushActivity(`❌ งานของ <b style="color:${team?.color}">${camper?.name}</b> ถูกตีกลับ`);
@@ -472,25 +498,26 @@ async function confirmReject() {
 async function renderPointsPage() {
   const teams   = await DB.getTeams();
   const campers = await DB.getCampers();
+  campers.sort((a,b) => (b.score||0) - (a.score||0));
 
-  // Populate selects
   const teamOpts = teams.map(t=>`<option value="${t.id}">${t.icon} ${t.name}</option>`).join('');
   document.getElementById('ptTeamSel').innerHTML  = '<option value="">— เลือกทีม —</option>' + teamOpts;
   document.getElementById('teamPtSel').innerHTML  = '<option value="">— เลือกทีม —</option>' + teamOpts;
 
-  // Camper table
+  const teamsMap = {};
+  teams.forEach(t => { teamsMap[t.id] = t; });
+
   document.getElementById('camperCountLabel').textContent = `${campers.length} คน`;
-  document.getElementById('allCampersTable').innerHTML = campers
-    .sort((a,b)=>(b.score||0)-(a.score||0))
-    .map(c => {
-      const team = teams.find(t=>t.id===c.teamId);
-      return `<tr>
-        <td>${c.name}</td>
-        <td><span style="color:${team?.color}">${team?.name||'—'}</span></td>
-        <td style="font-family:var(--font-mono);color:var(--gold)">${(c.score||0).toLocaleString()}</td>
-      </tr>`;
-    }).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--text-shadow)">ยังไม่มีน้องลงทะเบียน</td></tr>';
+  document.getElementById('allCampersTable').innerHTML = campers.map(c => {
+    const team = teamsMap[c.teamId];
+    return `<tr>
+      <td>${c.name}</td>
+      <td><span style="color:${team?.color}">${team?.name||'—'}</span></td>
+      <td style="font-family:var(--font-mono);color:var(--gold)">${(c.score||0).toLocaleString()}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--text-shadow)">ยังไม่มีน้องลงทะเบียน</td></tr>';
 }
+
 
 async function renderCamperList() {
   const teamId = document.getElementById('ptTeamSel').value;
@@ -535,9 +562,14 @@ async function addTeamPoints() {
 async function searchCamper(q) {
   const results = document.getElementById('searchResults');
   if (!q.trim()) { results.innerHTML = ''; return; }
-  const campers = (await DB.getCampers()).filter(c => c.name.includes(q));
-  results.innerHTML = campers.slice(0,5).map(c => {
-    const team = await DB.getTeam(c.teamId);
+  const _allC   = await DB.getCampers();
+  const campers = _allC.filter(c => c.name.includes(q)).slice(0, 5);
+  const teamIds = [...new Set(campers.map(c => c.teamId))];
+  const teamsArr = await Promise.all(teamIds.map(id => DB.getTeam(id)));
+  const teamsMap = {};
+  teamsArr.forEach(t => { if(t) teamsMap[t.id] = t; });
+  results.innerHTML = campers.map(c => {
+    const team = teamsMap[c.teamId];
     return `<div class="camper-card" style="cursor:pointer" onclick="(async()=>{ await showScannerResult('${c.id}') })()">
       <div class="camper-card-avatar" style="background:${team?.color||'#333'}18;color:${team?.color||'#aaa'};border-color:${team?.color||'#555'}40">${c.name.charAt(0)}</div>
       <div class="camper-card-info">
@@ -548,6 +580,7 @@ async function searchCamper(q) {
     </div>`;
   }).join('') || '<div style="font-size:12px;color:var(--text-shadow);padding:8px">ไม่พบน้อง</div>';
 }
+
 
 async function showScannerResult(camperId) {
   scannerCamperId = camperId;
@@ -579,7 +612,7 @@ async function showScannerResult(camperId) {
   document.getElementById('scanSearch').value = '';
 }
 
-async function openScannerPointModal() {
+function openScannerPointModal() {
   if (!scannerCamperId) return;
   const camper = await DB.getCamper(scannerCamperId);
   const team   = await DB.getTeam(camper?.teamId);
@@ -630,7 +663,7 @@ function stopScanner() {
 
 // ── LEADERBOARD / LIVEBOARD ───────
 async function renderLeaderboard() {
-  const teams = (await DB.getTeams()).sort((a,b)=>b.score-a.score);
+  const _t = await DB.getTeams(); const teams = _t.sort((a,b)=>b.score-a.score);
   const max   = teams[0]?.score||1;
   document.getElementById('statCards').innerHTML = teams.map((t,i)=>`
     <div class="stat-card"><div class="stat-card-bar" style="background:${t.color}"></div>
@@ -649,7 +682,7 @@ async function renderLeaderboard() {
 }
 
 async function renderLiveboard() {
-  const teams = (await DB.getTeams()).sort((a,b)=>b.score-a.score);
+  const _t = await DB.getTeams(); const teams = _t.sort((a,b)=>b.score-a.score);
   const max   = teams[0]?.score||1;
   const rc    = ['first','second','third',''];
   const re    = ['⚡','🌊','☀️','💀'];
@@ -665,8 +698,8 @@ async function renderLiveboard() {
 
 // ── ACTIVITY ──────────────────────
 async function renderActivity() {
-  const _acts = await DB.getActivities();
-  document.getElementById('activityFeed').innerHTML = _acts.slice(0,20).map(a=>`
+  const _acts3 = await DB.getActivities();
+  document.getElementById('activityFeed').innerHTML = _acts3.slice(0,20).map(a=>`
     <div class="activity-item"><div>${a.text}</div><div class="activity-time">${a.time}</div></div>`).join('');
 }
 
