@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IDP CAMP 2026 — น้องค่าย</title>
+<title>TARTARUS — น้องค่าย</title>
 <link rel="stylesheet" href="style.css">
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
@@ -21,8 +20,8 @@
   <header class="header">
     <div class="header-left">
       <div class="logo">
-        <span class="logo-main">IDP CAMP</span>
-        <span class="logo-sub">IDP CAMP · 2026</span>
+        <span class="logo-main">TARTARUS</span>
+        <span class="logo-sub">CAMP · MMXXV</span>
       </div>
       <div class="header-countdown" id="headerCountdown" style="display:none">
         <div class="countdown-pip"></div>
@@ -48,14 +47,14 @@
     <div class="login-wrap">
       <div class="login-card">
         <div class="login-rune">⚡</div>
-        <div class="login-logo">IDP CAMP</div>
-        <div class="login-sub">IDP CAMP · 2026</div>
+        <div class="login-logo">TARTARUS</div>
+        <div class="login-sub">CAMP · MMXXV</div>
         <div id="teamWelcome" style="text-align:center; margin-bottom:24px; font-family:var(--font-title); font-size:18px; letter-spacing:1px;"></div>
         <div class="form-group">
           <label class="form-label">ชื่อของคุณ</label>
           <input class="form-input" id="regName" placeholder="กรอกชื่อ–นามสกุล..." maxlength="40">
         </div>
-        <button class="btn btn-primary btn-full mt-8" onclick="(async()=>{ await registerCamper() })()">⚔️ เข้าสู่ค่าย</button>
+        <button class="btn btn-primary btn-full mt-8" onclick="registerCamper()">⚔️ เข้าสู่ค่าย</button>
         <div style="font-size:11px; color:var(--text-shadow); text-align:center; margin-top:16px;">ชื่อจะถูกจำไว้ในอุปกรณ์นี้</div>
       </div>
     </div>
@@ -69,10 +68,10 @@
       <div class="sidebar-crest">⚡</div>
       <div class="sidebar-section">
         <div class="sidebar-section-label">เมนู</div>
-        <div class="nav-item active" data-page="quests"      onclick="(async()=>{ await navigate('quests') })()">      <span class="nav-icon">⚔️</span><span>ภารกิจ</span>        <span class="nav-badge" id="questBadge">0</span></div>
-        <div class="nav-item"        data-page="submissions" onclick="(async()=>{ await navigate('submissions') })()"> <span class="nav-icon">📜</span><span>งานของฉัน</span>     <span class="nav-badge" id="pendingBadge" style="display:none">0</span></div>
-        <div class="nav-item"        data-page="leaderboard" onclick="(async()=>{ await navigate('leaderboard') })()"> <span class="nav-icon">🏛</span><span>Leaderboard</span></div>
-        <div class="nav-item"        data-page="profile"     onclick="(async()=>{ await navigate('profile') })()">     <span class="nav-icon">🦉</span><span>โปรไฟล์</span></div>
+        <div class="nav-item active" data-page="quests"      onclick="navigate('quests')">      <span class="nav-icon">⚔️</span><span>ภารกิจ</span>        <span class="nav-badge" id="questBadge">0</span></div>
+        <div class="nav-item"        data-page="submissions" onclick="navigate('submissions')"> <span class="nav-icon">📜</span><span>งานของฉัน</span>     <span class="nav-badge" id="pendingBadge" style="display:none">0</span></div>
+        <div class="nav-item"        data-page="leaderboard" onclick="navigate('leaderboard')"> <span class="nav-icon">🏛</span><span>Leaderboard</span></div>
+        <div class="nav-item"        data-page="profile"     onclick="navigate('profile')">     <span class="nav-icon">🦉</span><span>โปรไฟล์</span></div>
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section">
@@ -94,11 +93,11 @@
           <p class="page-subtitle">รับภารกิจ · ส่งหลักฐาน · พิชิตคะแนน</p>
         </div>
         <div class="quest-filters">
-          <button class="filter-btn active" data-filter="all"   onclick="(async()=>{ await filterQuests('all',this) })()">ทั้งหมด</button>
-          <button class="filter-btn"        data-filter="main"  onclick="(async()=>{ await filterQuests('main',this) })()">⭐ หลัก</button>
-          <button class="filter-btn"        data-filter="side"  onclick="(async()=>{ await filterQuests('side',this) })()">📌 รอง</button>
-          <button class="filter-btn"        data-filter="bonus" onclick="(async()=>{ await filterQuests('bonus',this) })()">🎁 โบนัส</button>
-          <button class="filter-btn"        data-filter="todo"  onclick="(async()=>{ await filterQuests('todo',this) })()">🔵 ยังไม่ส่ง</button>
+          <button class="filter-btn active" data-filter="all"   onclick="filterQuests('all',this)">ทั้งหมด</button>
+          <button class="filter-btn"        data-filter="main"  onclick="filterQuests('main',this)">⭐ หลัก</button>
+          <button class="filter-btn"        data-filter="side"  onclick="filterQuests('side',this)">📌 รอง</button>
+          <button class="filter-btn"        data-filter="bonus" onclick="filterQuests('bonus',this)">🎁 โบนัส</button>
+          <button class="filter-btn"        data-filter="todo"  onclick="filterQuests('todo',this)">🔵 ยังไม่ส่ง</button>
         </div>
         <div class="quest-grid" id="questGrid"></div>
       </div>
@@ -204,7 +203,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="(async()=>{ await submitWork() })()">📤 ส่งงาน</button>
+      <button class="btn btn-primary" onclick="submitWork()">📤 ส่งงาน</button>
     </div>
   </div>
 </div>
@@ -220,10 +219,10 @@ let currentQuestId = null;
 let currentFilter  = 'all';
 let countdownInt   = null;
 
-const QUOTES = ['"γνῶθι σεαυτόν" — รู้จักตัวเอง', '"Courage is knowing what not to fear"', '"Even gods are bound by fate" · IDP 2026'];
+const QUOTES = ['"γνῶθι σεαυτόν" — รู้จักตัวเอง', '"Courage is knowing what not to fear"', '"Even gods are bound by fate"'];
 
 // ── BOOT ──────────────────────────
-async function boot() {
+function boot() {
   // Get teamId from URL
   const params = new URLSearchParams(location.search);
   teamId = params.get('team');
@@ -240,7 +239,7 @@ async function boot() {
 
   if (!teamId && !session) {
     // No team in URL and no session → show error
-    document.body.innerHTML = `<div class="login-wrap"><div class="login-card"><div class="login-logo">IDP CAMP</div><div class="login-sub">กรุณาสแกน QR Code ของทีมคุณ</div></div></div>`;
+    document.body.innerHTML = `<div class="login-wrap"><div class="login-card"><div class="login-logo">TARTARUS</div><div class="login-sub">กรุณาสแกน QR Code ของทีมคุณ</div></div></div>`;
     return;
   }
 
@@ -255,62 +254,45 @@ async function boot() {
 
   setupOffline();
   startCountdown();
-  // Realtime listeners
-  DB.onActivitiesChange((acts) => {
-    document.getElementById('activityFeed').innerHTML = acts.map(a =>
-      `<div class="activity-item"><div>${a.text}</div><div class="activity-time">${a.time}</div></div>`
-    ).join('');
-  });
-  DB.onTeamsChange(async (teams) => {
-    const sorted = teams.sort((a,b) => b.score - a.score);
-    document.getElementById('teamsMini').innerHTML = sorted.map(t =>
-      `<div class="team-mini-item">
-        <div class="team-mini-dot" style="background:${t.color}"></div>
-        <span style="flex:1">${t.name}</span>
-        <span class="team-mini-score">${t.score.toLocaleString()}</span>
-      </div>`).join('');
-    // Update header score
-    const myTeam = sorted.find(t => t.id === session?.teamId);
-    if (myTeam) document.getElementById('headerTeamScore').textContent = myTeam.score.toLocaleString() + ' pt';
-  });
+  setInterval(refreshActivity, 10000);
 }
 
-async function showRegister() {
+function showRegister() {
   document.getElementById('registerWrap').style.display = 'flex';
   document.getElementById('registerWrap').style.flexDirection = 'column';
   document.getElementById('registerWrap').style.flex = '1';
   document.getElementById('appWrap').style.display = 'none';
-  const team = await DB.getTeam(teamId);
+  const team = DB.getTeam(teamId);
   const welcome = document.getElementById('teamWelcome');
   if (welcome && team) {
     welcome.innerHTML = `<span style="color:${team.color}">${team.icon} ${team.name}</span>`;
   }
 }
 
-async function registerCamper() {
+function registerCamper() {
   const name = document.getElementById('regName').value.trim();
   if (!name) { showToast('กรุณากรอกชื่อ', 'error'); return; }
-  const team = await DB.getTeam(teamId);
+  const team = DB.getTeam(teamId);
   if (!team) { showToast('ไม่พบทีม', 'error'); return; }
 
   const camperId = 'c' + Date.now();
   const camper = { id: camperId, name, teamId, score: 0, badges: [], createdAt: new Date().toISOString() };
-  await DB.upsertCamper(camper);
+  DB.upsertCamper(camper);
 
   // Add to team members
-  const teams = await DB.getTeams();
+  const teams = DB.getTeams();
   const t = teams.find(t => t.id === teamId);
-  if (t && !t.members.includes(camperId)) { t.members.push(camperId); await DB.saveTeams(teams); }
+  if (t && !t.members.includes(camperId)) { t.members.push(camperId); DB.saveTeams(teams); }
 
   session = { camperId, teamId, name };
   DB.setSession(session);
-  await DB.pushActivity(`${team.icon} <b style="color:${team.color}">${name}</b> เข้าร่วม${team.name}!`);
+  DB.pushActivity(`${team.icon} <b style="color:${team.color}">${name}</b> เข้าร่วม${team.name}!`);
 
   document.getElementById('registerWrap').style.display = 'none';
   showApp();
 }
 
-async function showApp() {
+function showApp() {
   document.getElementById('appWrap').style.display = 'flex';
   renderHeader();
   renderSidebar();
@@ -320,9 +302,9 @@ async function showApp() {
 }
 
 // ── HEADER ────────────────────────
-async function renderHeader() {
-  const camper = await DB.getCamper(session.camperId);
-  const team   = await DB.getTeam(session.teamId);
+function renderHeader() {
+  const camper = DB.getCamper(session.camperId);
+  const team   = DB.getTeam(session.teamId);
   if (!team) return;
 
   document.getElementById('headerTeamBadge').style.display = 'flex';
@@ -334,8 +316,8 @@ async function renderHeader() {
 }
 
 // ── SIDEBAR ───────────────────────
-async function renderSidebar() {
-  const teams = (await DB.getTeams()).sort((a,b) => b.score - a.score);
+function renderSidebar() {
+  const teams = DB.getTeams().sort((a,b) => b.score - a.score);
   document.getElementById('teamsMini').innerHTML = teams.map(t => `
     <div class="team-mini-item">
       <div class="team-mini-dot" style="background:${t.color}"></div>
@@ -344,19 +326,19 @@ async function renderSidebar() {
     </div>`).join('');
 
   // Pending badge
-  const pending = (await DB.getCamperSubmissions(session.camperId)).filter(s => s.status === 'pending').length;
+  const pending = DB.getCamperSubmissions(session.camperId).filter(s => s.status === 'pending').length;
   const pb = document.getElementById('pendingBadge');
   if (pending > 0) { pb.textContent = pending; pb.style.display = 'inline'; }
   else pb.style.display = 'none';
 
   // Quest badge (remaining)
-  const myDone = new Set((await DB.getCamperSubmissions(session.camperId)).filter(s=>s.status==='approved').map(s=>s.questId));
-  const remaining = (await DB.getQuests()).filter(q => q.active && !myDone.has(q.id)).length;
+  const myDone = new Set(DB.getCamperSubmissions(session.camperId).filter(s=>s.status==='approved').map(s=>s.questId));
+  const remaining = DB.getQuests().filter(q => q.active && !myDone.has(q.id)).length;
   document.getElementById('questBadge').textContent = remaining;
 }
 
 // ── NAVIGATE ──────────────────────
-async function navigate(page) {
+function navigate(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page)?.classList.add('active');
@@ -366,17 +348,17 @@ async function navigate(page) {
 }
 
 // ── QUESTS ────────────────────────
-async function filterQuests(f, btn) {
+function filterQuests(f, btn) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   currentFilter = f;
   renderQuestGrid(f);
 }
 
-async function renderQuestGrid(filter = currentFilter) {
-  const myApproved = new Set((await DB.getCamperSubmissions(session.camperId)).filter(s=>s.status==='approved').map(s=>s.questId));
-  const myPending  = new Set((await DB.getCamperSubmissions(session.camperId)).filter(s=>s.status==='pending').map(s=>s.questId));
-  let quests = (await DB.getQuests()).filter(q => q.active);
+function renderQuestGrid(filter = currentFilter) {
+  const myApproved = new Set(DB.getCamperSubmissions(session.camperId).filter(s=>s.status==='approved').map(s=>s.questId));
+  const myPending  = new Set(DB.getCamperSubmissions(session.camperId).filter(s=>s.status==='pending').map(s=>s.questId));
+  let quests = DB.getQuests().filter(q => q.active);
   if (filter==='main')  quests = quests.filter(q=>q.type==='main');
   if (filter==='side')  quests = quests.filter(q=>q.type==='side');
   if (filter==='bonus') quests = quests.filter(q=>q.type==='bonus');
@@ -396,15 +378,15 @@ async function renderQuestGrid(filter = currentFilter) {
           <div class="quest-points">⭐ ${q.points} pt</div>
           <div class="quest-type-tag ${q.type}">${typeLabel[q.type]}</div>
         </div>
-        ${!done && !pending ? `<button class="quest-submit-btn" onclick="(async()=>{ await openSubmit(${q.id}) })()">📜 ส่งหลักฐาน</button>` : ''}
+        ${!done && !pending ? `<button class="quest-submit-btn" onclick="openSubmit(${q.id})">📜 ส่งหลักฐาน</button>` : ''}
       </div>`;
   }).join('') || '<div style="text-align:center;color:var(--text-shadow);padding:40px;font-size:14px;">ไม่มีภารกิจในหมวดนี้</div>';
 }
 
 // ── SUBMIT MODAL ──────────────────
-async function openSubmit(questId) {
+function openSubmit(questId) {
   currentQuestId = questId;
-  const q = (await DB.getQuests()).find(x=>x.id===questId);
+  const q = DB.getQuests().find(x=>x.id===questId);
   if (!q) return;
   document.getElementById('modalQuestName').textContent = q.icon + ' ' + q.name;
   document.getElementById('modalQuestDesc').textContent = 'คะแนน: +' + q.points + ' pt';
@@ -428,54 +410,31 @@ function previewFile(input) {
   }
 }
 
-async function submitWork() {
+function submitWork() {
   if (!currentQuestId) return;
-  const quests = await DB.getQuests();
-  const q = quests.find(x => x.id === currentQuestId);
-  const team = await DB.getTeam(session.teamId);
-  const file = document.getElementById('fileInput').files?.[0];
-
-  // Create submission first to get ID
-  const sub = await DB.addSubmission({
-    questId:     q.id,
-    questName:   q.name,
-    questPoints: q.points,
-    camperId:    session.camperId,
-    camperName:  session.name,
-    teamId:      session.teamId,
-    desc:        document.getElementById('submissionDesc').value,
-    hasFile:     !!file,
-    fileUrl:     null,
-    fileType:    null,
+  const q = DB.getQuests().find(x=>x.id===currentQuestId);
+  const team = DB.getTeam(session.teamId);
+  DB.addSubmission({
+    questId:    q.id,
+    questName:  q.name,
+    questPoints:q.points,
+    camperId:   session.camperId,
+    camperName: session.name,
+    teamId:     session.teamId,
+    desc:       document.getElementById('submissionDesc').value,
+    hasFile:    !!document.getElementById('fileInput').files?.[0],
   });
-
-  // Upload to Cloudinary if file selected
-  if (file) {
-    showToast('⏫ กำลังอัปโหลด...', '');
-    document.querySelector('.btn[onclick*="submitWork"]') && (document.querySelector('.btn[onclick*="submitWork"]').disabled = true);
-    try {
-      // Show progress
-      const progressEl = document.getElementById('uploadProgress');
-      const result = await DB.uploadFile(file, (pct) => {
-        if (progressEl) progressEl.textContent = `⏫ อัปโหลด ${pct}%`;
-      });
-      await DB.updateSubmission(sub.id, { fileUrl: result.url, fileType: result.resourceType });
-    } catch(e) {
-      showToast('⚠️ อัปโหลดไฟล์ไม่สำเร็จ แต่ส่งงานแล้ว', 'error');
-    }
-  }
-
-  await DB.pushActivity(`${team.icon} <b style="color:${team.color}">${session.name}</b> ส่งหลักฐาน "${q.name}"`);
+  DB.pushActivity(`${team.icon} <b style="color:${team.color}">${session.name}</b> ส่งหลักฐาน "${q.name}"`);
   closeModal();
-  await renderQuestGrid();
-  await renderSidebar();
+  renderQuestGrid();
+  renderSidebar();
+  renderActivity();
   showToast('📜 ส่งงานเรียบร้อย! รอพี่สต๊าฟตรวจ 🙏', 'success');
 }
 
-
 // ── SUBMISSIONS ───────────────────
-async function renderSubmissions() {
-  const subs = await DB.getCamperSubmissions(session.camperId);
+function renderSubmissions() {
+  const subs = DB.getCamperSubmissions(session.camperId);
   const icon  = {pending:'🔵', approved:'✅', rejected:'❌'};
   const label = {pending:'รอตรวจ', approved:'ผ่านแล้ว', rejected:'ไม่ผ่าน'};
   if (!subs.length) {
@@ -495,8 +454,8 @@ async function renderSubmissions() {
 }
 
 // ── LEADERBOARD ───────────────────
-async function renderLeaderboard() {
-  const teams = (await DB.getTeams()).sort((a,b)=>b.score-a.score);
+function renderLeaderboard() {
+  const teams = DB.getTeams().sort((a,b)=>b.score-a.score);
   const max   = teams[0]?.score || 1;
 
   // Stat cards
@@ -519,8 +478,8 @@ async function renderLeaderboard() {
     </div>`).join('');
 
   // Personal leaderboard (own team)
-  const team = await DB.getTeam(session.teamId);
-  const campers = (await DB.getCampersByTeam(session.teamId)).sort((a,b)=>(b.score||0)-(a.score||0));
+  const team = DB.getTeam(session.teamId);
+  const campers = DB.getCampersByTeam(session.teamId).sort((a,b)=>(b.score||0)-(a.score||0));
   document.getElementById('personalLbTeamName').textContent = team?.name || '';
   document.getElementById('personalLb').innerHTML = campers.length ? campers.map((c,i)=>`
     <div class="personal-lb-item ${c.id===session.camperId?'me':''}">
@@ -532,9 +491,9 @@ async function renderLeaderboard() {
 }
 
 // ── PROFILE ───────────────────────
-async function renderProfile() {
-  const camper = await DB.getCamper(session.camperId);
-  const team   = await DB.getTeam(session.teamId);
+function renderProfile() {
+  const camper = DB.getCamper(session.camperId);
+  const team   = DB.getTeam(session.teamId);
   if (!camper || !team) return;
 
   document.getElementById('profileName').textContent  = camper.name;
@@ -543,7 +502,7 @@ async function renderProfile() {
   document.getElementById('profileScore').textContent  = (camper.score||0).toLocaleString();
 
   // Rank in team
-  const campers = (await DB.getCampersByTeam(session.teamId)).sort((a,b)=>(b.score||0)-(a.score||0));
+  const campers = DB.getCampersByTeam(session.teamId).sort((a,b)=>(b.score||0)-(a.score||0));
   const rank = campers.findIndex(c=>c.id===session.camperId)+1;
   document.getElementById('profileHouse').innerHTML = `<span>🐍</span> ${team.name} · อันดับ #${rank}`;
 
@@ -565,38 +524,34 @@ async function renderProfile() {
 }
 
 // ── ACTIVITY ──────────────────────
-async function renderActivity() {
-  const acts = await DB.getActivities();
+function renderActivity() {
+  const acts = DB.getActivities();
   document.getElementById('activityFeed').innerHTML = acts.slice(0,20).map(a=>`
     <div class="activity-item"><div>${a.text}</div><div class="activity-time">${a.time}</div></div>`).join('');
 }
-async function refreshActivity() {
+function refreshActivity() {
   renderActivity();
   renderSidebar();
   if (document.getElementById('page-leaderboard').classList.contains('active')) renderLeaderboard();
 }
 
 // ── COUNTDOWN ─────────────────────
-async function startCountdown() {
+function startCountdown() {
+  const el = document.getElementById('countdownTimer');
   const wrap = document.getElementById('headerCountdown');
-  const el   = document.getElementById('countdownTimer');
-  const lbl  = document.getElementById('countdownLabel');
-  // Listen for countdown changes
-  DB.onCountdownChange((cd) => {
-    if (!cd || !cd.endTs) { if(wrap) wrap.style.display='none'; return; }
-    if(wrap) wrap.style.display='flex';
-    if(lbl) lbl.textContent = cd.label || 'เหลือเวลา';
-  });
-  // Tick every second
-  setInterval(async () => {
-    const secs = await DB.getCountdownRemaining();
-    if (secs === null) { if(wrap) wrap.style.display='none'; return; }
-    if(wrap) wrap.style.display='flex';
+  const labelEl = document.getElementById('countdownLabel');
+  function tick() {
+    const secs = DB.getCountdownRemaining();
+    if (secs === null) { wrap.style.display='none'; return; }
+    wrap.style.display = 'flex';
+    const { label } = DB.getCountdown();
+    if (labelEl) labelEl.textContent = label || 'เหลือเวลา';
     const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
-    if(el) el.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  }, 1000);
+    el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+  tick();
+  setInterval(tick, 1000);
 }
-
 
 // ── OFFLINE ───────────────────────
 function setupOffline() {

@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IDP CAMP 2026 — Staff</title>
+<title>TARTARUS — Staff</title>
 <link rel="stylesheet" href="style.css">
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
@@ -18,13 +17,13 @@
       <div class="login-card">
         <div class="login-rune">🛡</div>
         <div class="login-logo">STAFF</div>
-        <div class="login-sub">IDP CAMP · PORTAL</div>
+        <div class="login-sub">TARTARUS CAMP · PORTAL</div>
         <div class="form-group mt-16">
           <label class="form-label">Staff PIN</label>
           <input class="form-input" id="pinInput" type="password" placeholder="กรอก PIN..." maxlength="10"
                  onkeydown="if(event.key==='Enter') staffLogin()">
         </div>
-        <button class="btn btn-primary btn-full mt-8" onclick="(async()=>{ await staffLogin() })()">🔓 เข้าสู่ระบบ</button>
+        <button class="btn btn-primary btn-full mt-8" onclick="staffLogin()">🔓 เข้าสู่ระบบ</button>
         <div style="margin-top:16px; text-align:center; font-size:11px; color:var(--text-shadow)">PIN เริ่มต้น: 1111 · 2222</div>
       </div>
     </div>
@@ -39,7 +38,7 @@
 
     <header class="header">
       <div class="header-left">
-        <div class="logo"><span class="logo-main">IDP CAMP</span><span class="logo-sub">IDP CAMP · 2026</span></div>
+        <div class="logo"><span class="logo-main">TARTARUS</span><span class="logo-sub">CAMP · MMXXV</span></div>
         <div class="header-countdown" id="headerCountdown" style="display:none">
           <div class="countdown-pip"></div>
           <div class="countdown-inner">
@@ -51,7 +50,7 @@
       <div class="header-right">
         <span class="role-chip staff">🛠 STAFF</span>
         <span id="staffNameChip" style="font-family:var(--font-title);font-size:12px;color:var(--text-stone)"></span>
-        <button class="btn btn-ghost btn-sm" onclick="(async()=>{ logout() })()">ออก</button>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">ออก</button>
       </div>
     </header>
 
@@ -60,11 +59,11 @@
         <div class="sidebar-crest">🛡</div>
         <div class="sidebar-section">
           <div class="sidebar-section-label">เมนูสต๊าฟ</div>
-          <div class="nav-item active" data-page="review"      onclick="(async()=>{ navigate('review') })()">     <span class="nav-icon">🔍</span><span>ตรวจงาน</span>      <span class="nav-badge danger" id="reviewBadge">0</span></div>
-          <div class="nav-item"        data-page="points"      onclick="(async()=>{ navigate('points') })()">     <span class="nav-icon">⚡</span><span>เพิ่ม/ลดคะแนน</span></div>
-          <div class="nav-item"        data-page="scanner"     onclick="(async()=>{ navigate('scanner') })()">    <span class="nav-icon">📷</span><span>Scanner</span></div>
-          <div class="nav-item"        data-page="leaderboard" onclick="(async()=>{ navigate('leaderboard') })()"><span class="nav-icon">🏛</span><span>Leaderboard</span></div>
-          <div class="nav-item"        data-page="liveboard"   onclick="(async()=>{ navigate('liveboard') })()">  <span class="nav-icon">📺</span><span>Live Board</span></div>
+          <div class="nav-item active" data-page="review"      onclick="navigate('review')">     <span class="nav-icon">🔍</span><span>ตรวจงาน</span>      <span class="nav-badge danger" id="reviewBadge">0</span></div>
+          <div class="nav-item"        data-page="points"      onclick="navigate('points')">     <span class="nav-icon">⚡</span><span>เพิ่ม/ลดคะแนน</span></div>
+          <div class="nav-item"        data-page="scanner"     onclick="navigate('scanner')">    <span class="nav-icon">📷</span><span>Scanner</span></div>
+          <div class="nav-item"        data-page="leaderboard" onclick="navigate('leaderboard')"><span class="nav-icon">🏛</span><span>Leaderboard</span></div>
+          <div class="nav-item"        data-page="liveboard"   onclick="navigate('liveboard')">  <span class="nav-icon">📺</span><span>Live Board</span></div>
         </div>
         <div class="sidebar-divider"></div>
         <div class="sidebar-section"><div class="sidebar-section-label">คะแนนทีม</div></div>
@@ -118,7 +117,7 @@
                   <input class="form-input" id="ptReason" placeholder="เช่น คะแนนระเบียบวินัย">
                 </div>
               </div>
-              <button class="btn btn-primary" onclick="(async()=>{ addIndividualPoints() })()">⚡ บันทึก</button>
+              <button class="btn btn-primary" onclick="addIndividualPoints()">⚡ บันทึก</button>
             </div>
           </div>
 
@@ -142,7 +141,7 @@
                   <input class="form-input" id="teamPtReason" placeholder="เช่น ชนะเกม">
                 </div>
               </div>
-              <button class="btn btn-primary" onclick="(async()=>{ addTeamPoints() })()">⚡ บันทึก</button>
+              <button class="btn btn-primary" onclick="addTeamPoints()">⚡ บันทึก</button>
             </div>
           </div>
 
@@ -223,7 +222,7 @@
           </div>
           <div style="text-align:center;padding:32px;background:var(--bg-cell);border:1px solid var(--border-gold);border-radius:var(--r-xl);margin-bottom:20px">
             <div style="font-size:52px;margin-bottom:12px">📺</div>
-            <div style="font-family:var(--font-title);font-size:20px;letter-spacing:2px;color:var(--gold-bright);margin-bottom:8px">IDP CAMP LIVE BOARD</div>
+            <div style="font-family:var(--font-title);font-size:20px;letter-spacing:2px;color:var(--gold-bright);margin-bottom:8px">TARTARUS LIVE BOARD</div>
             <div style="font-size:13px;color:var(--text-shadow);margin-bottom:24px">เปิดในหน้าต่างใหม่แล้วฉายบนโปรเจกเตอร์<br>คะแนนทีม + อันดับน้อง + Ticker กิจกรรม — Real-time</div>
             <a class="btn btn-glow" href="live.html" target="_blank" style="font-size:14px;padding:12px 28px">⛶ เปิด Live Board →</a>
           </div>
@@ -256,7 +255,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="document.getElementById('rejectModal').classList.remove('open')">ยกเลิก</button>
-      <button class="btn btn-danger" onclick="(async()=>{ confirmReject() })()">❌ ตีกลับ</button>
+      <button class="btn btn-danger" onclick="confirmReject()">❌ ตีกลับ</button>
     </div>
   </div>
 </div>
@@ -277,7 +276,7 @@
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="document.getElementById('scannerPointModal').classList.remove('open')">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="(async()=>{ confirmScannerPoints() })()">⚡ บันทึก</button>
+      <button class="btn btn-primary" onclick="confirmScannerPoints()">⚡ บันทึก</button>
     </div>
   </div>
 </div>
@@ -292,9 +291,9 @@ let scannerCamperId = null;
 let scannerStream = null;
 
 // ── LOGIN ─────────────────────────
-async function staffLogin() {
+function staffLogin() {
   const pin  = document.getElementById('pinInput').value.trim();
-  const _staff = await DB.getStaff(); const staff = _staff.find(s => s.pin === pin);
+  const staff = DB.getStaff().find(s => s.pin === pin);
   if (!staff) { showToast('PIN ไม่ถูกต้อง', 'error'); return; }
   staffSession = staff;
   document.getElementById('loginWrap').style.display  = 'none';
@@ -304,7 +303,7 @@ async function staffLogin() {
   initApp();
 }
 
-async function logout() {
+function logout() {
   staffSession = null;
   document.getElementById('appWrap').style.display  = 'none';
   document.getElementById('loginWrap').style.display = 'flex';
@@ -313,34 +312,30 @@ async function logout() {
 }
 
 // ── INIT ──────────────────────────
-async function initApp() {
-  await renderSidebar();
-  await renderReviewQueue();
-  await renderActivity();
-  await startCountdown();
+function initApp() {
+  renderSidebar();
+  renderReviewQueue();
+  renderActivity();
+  startCountdown();
   setupOffline();
-  setInterval(async () => {
-    await renderActivity();
-    await renderSidebar();
-    if(document.getElementById('page-review').classList.contains('active')) await renderReviewQueue();
-  }, 8000);
+  setInterval(() => { renderActivity(); renderSidebar(); if(document.getElementById('page-review').classList.contains('active')) renderReviewQueue(); }, 8000);
 }
 
 // ── SIDEBAR ───────────────────────
-async function renderSidebar() {
-  const _t = await DB.getTeams(); const teams = _t.sort((a,b)=>b.score-a.score);
+function renderSidebar() {
+  const teams = DB.getTeams().sort((a,b)=>b.score-a.score);
   document.getElementById('teamsMini').innerHTML = teams.map(t=>`
     <div class="team-mini-item">
       <div class="team-mini-dot" style="background:${t.color}"></div>
       <span style="flex:1">${t.name}</span>
       <span class="team-mini-score">${t.score.toLocaleString()}</span>
     </div>`).join('');
-  const _pending = await DB.getPendingSubmissions(); const pending = _pending.length;
+  const pending = DB.getPendingSubmissions().length;
   document.getElementById('reviewBadge').textContent = pending;
 }
 
 // ── NAVIGATE ──────────────────────
-async function navigate(page) {
+function navigate(page) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
@@ -351,66 +346,21 @@ async function navigate(page) {
     leaderboard: renderLeaderboard,
     liveboard: renderLiveboard,
   };
-  if (map[page]) await map[page]();
-}
-
-
-// Helper: build media viewer HTML
-function buildMediaViewer(s) {
-  if (!s.fileUrl) {
-    return `<div class="review-media"><span style="font-size:28px">📝</span><span>ไม่มีไฟล์แนบ</span></div>`;
-  }
-  if (s.fileType === 'video') {
-    return `<div class="review-media" style="height:auto;padding:0;overflow:hidden;border-radius:var(--r-lg)">
-      <video src="${s.fileUrl}" controls style="width:100%;max-height:280px;border-radius:var(--r-lg);background:#000"></video>
-    </div>`;
-  }
-  return `<div class="review-media" style="height:auto;padding:0;overflow:hidden;border-radius:var(--r-lg)">
-    <img src="${s.fileUrl}" style="width:100%;max-height:280px;object-fit:contain;border-radius:var(--r-lg);background:#111;cursor:pointer" onclick="window.open('${s.fileUrl}','_blank')">
-  </div>`;
+  if (map[page]) map[page]();
 }
 
 // ── REVIEW QUEUE ──────────────────
-async function renderReviewQueue() {
-  const subs = await DB.getPendingSubmissions();
+function renderReviewQueue() {
+  const subs = DB.getPendingSubmissions();
   document.getElementById('pendingCount').textContent = subs.length;
   document.getElementById('reviewBadge').textContent  = subs.length;
   if (!subs.length) {
     document.getElementById('reviewQueue').innerHTML = '<div style="text-align:center;color:var(--text-shadow);padding:60px;font-size:14px;">🎉 ไม่มีงานรอตรวจ</div>';
     return;
   }
-  // Fetch all campers/teams in parallel first — no await inside .map()
-  const camperIds = [...new Set(subs.map(s => s.camperId))];
-  const teamIds   = [...new Set(subs.map(s => s.teamId))];
-  const [campersArr, teamsArr] = await Promise.all([
-    Promise.all(camperIds.map(id => DB.getCamper(id))),
-    Promise.all(teamIds.map(id => DB.getTeam(id))),
-  ]);
-  const campersMap = {};
-  campersArr.forEach(c => { if(c) campersMap[c.id] = c; });
-  const teamsMap = {};
-  teamsArr.forEach(t => { if(t) teamsMap[t.id] = t; });
-
   document.getElementById('reviewQueue').innerHTML = subs.map(s => {
-    const camper = campersMap[s.camperId];
-    const team   = teamsMap[s.teamId];
-    let mediaHtml = '';
-    if (s.fileUrl) {
-      if (s.fileType === 'video') {
-        mediaHtml = `<div class="review-media" style="height:auto;padding:0;overflow:hidden">
-          <video src="${s.fileUrl}" controls style="width:100%;max-height:260px;background:#000;border-radius:var(--r-lg)"></video>
-        </div>`;
-      } else {
-        mediaHtml = `<div class="review-media" style="height:auto;padding:0;overflow:hidden" onclick="window.open('${s.fileUrl}','_blank')">
-          <img src="${s.fileUrl}" style="width:100%;max-height:260px;object-fit:contain;background:#111;cursor:pointer">
-        </div>`;
-      }
-    } else {
-      mediaHtml = `<div class="review-media">
-        <span style="font-size:28px">📝</span>
-        <span>ไม่มีไฟล์แนบ</span>
-      </div>`;
-    }
+    const camper = DB.getCamper(s.camperId);
+    const team   = DB.getTeam(s.teamId);
     return `
       <div class="review-item" id="review-${s.id}">
         <div class="review-header">
@@ -423,39 +373,42 @@ async function renderReviewQueue() {
           </div>
           <div class="review-time">${new Date(s.createdAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</div>
         </div>
-        ${mediaHtml}
+        <div class="review-media" onclick="showToast('🔍 Media viewer — เชื่อมต่อ backend เพื่อดูไฟล์จริง')">
+          <span style="font-size:28px">${s.hasFile?'🖼️':'📝'}</span>
+          <span>${s.hasFile?'คลิกเพื่อดูหลักฐาน':'ไม่มีไฟล์แนบ'}</span>
+        </div>
         ${s.desc ? `<div class="review-desc">"${s.desc}"</div>` : ''}
         <div class="review-actions">
-          <button class="btn-approve" onclick="(async()=>{ await approve(${s.id}) })()">✅ อนุมัติ +${s.questPoints}pt</button>
-          <button class="btn-reject"  onclick="(async()=>{ await openReject(${s.id},'${(camper?.name||'?').replace(/'/g,"\'")}') })()">❌ ตีกลับ</button>
+          <button class="btn-approve" onclick="approve(${s.id})">✅ อนุมัติ +${s.questPoints}pt</button>
+          <button class="btn-reject"  onclick="openReject(${s.id},'${(camper?.name||'?').replace(/'/g,"\\'")}')">❌ ตีกลับ</button>
         </div>
       </div>`;
   }).join('');
 }
 
-async function approve(subId) {
-  const _subs1 = await DB.getSubmissions(); const sub = _subs1.find(s=>s.id===subId);
+function approve(subId) {
+  const sub = DB.getSubmissions().find(s=>s.id===subId);
   if (!sub) return;
-  await DB.updateSubmission(subId, { status:'approved', points:sub.questPoints, reviewedAt:new Date().toISOString() });
-  await DB.updateCamperScore(sub.camperId, sub.questPoints);
-  await DB.updateTeamScore(sub.teamId, sub.questPoints);
+  DB.updateSubmission(subId, { status:'approved', points:sub.questPoints, reviewedAt:new Date().toISOString() });
+  DB.updateCamperScore(sub.camperId, sub.questPoints);
+  DB.updateTeamScore(sub.teamId, sub.questPoints);
 
   // Auto-award badges
-  const newBadges = await DB.checkAndAwardBadges(sub.camperId);
-  const camper = await DB.getCamper(sub.camperId);
-  const team   = await DB.getTeam(sub.teamId);
+  const newBadges = DB.checkAndAwardBadges(sub.camperId);
+  const camper = DB.getCamper(sub.camperId);
+  const team   = DB.getTeam(sub.teamId);
 
-  await DB.pushActivity(`✅ <b style="color:${team?.color}">${camper?.name}</b> ผ่านภารกิจ "${sub.questName}" +${sub.questPoints}pt`);
+  DB.pushActivity(`✅ <b style="color:${team?.color}">${camper?.name}</b> ผ่านภารกิจ "${sub.questName}" +${sub.questPoints}pt`);
   if (newBadges.length) {
-    await Promise.all(newBadges.map(b =>
-      DB.pushActivity(`${b.emoji} <b style="color:var(--gold-bright)">${camper?.name}</b> ได้รับ Badge <b>${b.name}</b>!`)
-    ));
+    newBadges.forEach(b => {
+      DB.pushActivity(`${b.emoji} <b style="color:var(--gold-bright)">${camper?.name}</b> ได้รับ Badge <b>${b.name}</b>!`);
+    });
     showBadgeNotification(newBadges[0], camper?.name);
   }
 
   document.getElementById('review-'+subId)?.classList.add('processed');
-  await renderSidebar();
-  await renderActivity();
+  renderSidebar();
+  renderActivity();
   const badgeMsg = newBadges.length ? ` · 🏅 ${newBadges.map(b=>b.name).join(', ')}` : '';
   showToast(`✅ อนุมัติแล้ว +${sub.questPoints}pt${badgeMsg}`, 'success');
 }
@@ -483,14 +436,14 @@ function openReject(subId, name) {
   document.getElementById('rejectModal').classList.add('open');
 }
 
-async function confirmReject() {
+function confirmReject() {
   if (!rejectTargetId) return;
   const reason = document.getElementById('rejectReason').value.trim();
-  await DB.updateSubmission(rejectTargetId, { status:'rejected', rejectReason:reason, reviewedAt:new Date().toISOString() });
-  const _subs2 = await DB.getSubmissions(); const sub    = _subs2.find(s=>s.id===rejectTargetId);
-  const camper = await DB.getCamper(sub?.camperId);
-  const team   = await DB.getTeam(sub?.teamId);
-  await DB.pushActivity(`❌ งานของ <b style="color:${team?.color}">${camper?.name}</b> ถูกตีกลับ`);
+  DB.updateSubmission(rejectTargetId, { status:'rejected', rejectReason:reason, reviewedAt:new Date().toISOString() });
+  const sub    = DB.getSubmissions().find(s=>s.id===rejectTargetId);
+  const camper = DB.getCamper(sub?.camperId);
+  const team   = DB.getTeam(sub?.teamId);
+  DB.pushActivity(`❌ งานของ <b style="color:${team?.color}">${camper?.name}</b> ถูกตีกลับ`);
   document.getElementById('review-'+rejectTargetId)?.classList.add('processed');
   document.getElementById('rejectModal').classList.remove('open');
   renderSidebar(); renderActivity();
@@ -499,48 +452,47 @@ async function confirmReject() {
 }
 
 // ── POINT ENTRY ───────────────────
-async function renderPointsPage() {
-  const teams   = await DB.getTeams();
-  const campers = await DB.getCampers();
-  campers.sort((a,b) => (b.score||0) - (a.score||0));
+function renderPointsPage() {
+  const teams   = DB.getTeams();
+  const campers = DB.getCampers();
 
+  // Populate selects
   const teamOpts = teams.map(t=>`<option value="${t.id}">${t.icon} ${t.name}</option>`).join('');
   document.getElementById('ptTeamSel').innerHTML  = '<option value="">— เลือกทีม —</option>' + teamOpts;
   document.getElementById('teamPtSel').innerHTML  = '<option value="">— เลือกทีม —</option>' + teamOpts;
 
-  const teamsMap = {};
-  teams.forEach(t => { teamsMap[t.id] = t; });
-
+  // Camper table
   document.getElementById('camperCountLabel').textContent = `${campers.length} คน`;
-  document.getElementById('allCampersTable').innerHTML = campers.map(c => {
-    const team = teamsMap[c.teamId];
-    return `<tr>
-      <td>${c.name}</td>
-      <td><span style="color:${team?.color}">${team?.name||'—'}</span></td>
-      <td style="font-family:var(--font-mono);color:var(--gold)">${(c.score||0).toLocaleString()}</td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--text-shadow)">ยังไม่มีน้องลงทะเบียน</td></tr>';
+  document.getElementById('allCampersTable').innerHTML = campers
+    .sort((a,b)=>(b.score||0)-(a.score||0))
+    .map(c => {
+      const team = teams.find(t=>t.id===c.teamId);
+      return `<tr>
+        <td>${c.name}</td>
+        <td><span style="color:${team?.color}">${team?.name||'—'}</span></td>
+        <td style="font-family:var(--font-mono);color:var(--gold)">${(c.score||0).toLocaleString()}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--text-shadow)">ยังไม่มีน้องลงทะเบียน</td></tr>';
 }
 
-
-async function renderCamperList() {
+function renderCamperList() {
   const teamId = document.getElementById('ptTeamSel').value;
-  const campers = teamId ? await DB.getCampersByTeam(teamId) : [];
+  const campers = teamId ? DB.getCampersByTeam(teamId) : [];
   document.getElementById('ptCamperSel').innerHTML =
     '<option value="">— เลือกน้อง —</option>' +
     campers.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
 }
 
-async function addIndividualPoints() {
+function addIndividualPoints() {
   const camperId = document.getElementById('ptCamperSel').value;
   const pts      = parseInt(document.getElementById('ptPoints').value);
   const reason   = document.getElementById('ptReason').value.trim();
   if (!camperId || isNaN(pts)) { showToast('กรุณาเลือกน้องและกรอกคะแนน','error'); return; }
-  const camper = await DB.getCamper(camperId);
-  const team   = await DB.getTeam(camper?.teamId);
-  await DB.updateCamperScore(camperId, pts);
-  if (pts > 0) await DB.updateTeamScore(camper.teamId, pts);
-  await DB.pushActivity(`⚡ พี่สต๊าฟ ${pts>0?'+'+pts:pts}pt ให้ <b style="color:${team?.color}">${camper?.name}</b>${reason?' ('+reason+')':''}`);
+  const camper = DB.getCamper(camperId);
+  const team   = DB.getTeam(camper?.teamId);
+  DB.updateCamperScore(camperId, pts);
+  if (pts > 0) DB.updateTeamScore(camper.teamId, pts);
+  DB.pushActivity(`⚡ พี่สต๊าฟ ${pts>0?'+'+pts:pts}pt ให้ <b style="color:${team?.color}">${camper?.name}</b>${reason?' ('+reason+')':''}`);
   renderActivity(); renderSidebar();
   document.getElementById('ptPoints').value = '';
   document.getElementById('ptReason').value = '';
@@ -548,14 +500,14 @@ async function addIndividualPoints() {
   renderPointsPage();
 }
 
-async function addTeamPoints() {
+function addTeamPoints() {
   const teamId = document.getElementById('teamPtSel').value;
   const pts    = parseInt(document.getElementById('teamPtPoints').value);
   const reason = document.getElementById('teamPtReason').value.trim();
   if (!teamId || isNaN(pts)) { showToast('กรุณาเลือกทีมและกรอกคะแนน','error'); return; }
-  await DB.updateTeamScore(teamId, pts);
-  const team = await DB.getTeam(teamId);
-  await DB.pushActivity(`⚡ พี่สต๊าฟ ${pts>0?'+'+pts:pts}pt ให้ <b style="color:${team?.color}">${team?.name}</b>${reason?' ('+reason+')':''}`);
+  DB.updateTeamScore(teamId, pts);
+  const team = DB.getTeam(teamId);
+  DB.pushActivity(`⚡ พี่สต๊าฟ ${pts>0?'+'+pts:pts}pt ให้ <b style="color:${team?.color}">${team?.name}</b>${reason?' ('+reason+')':''}`);
   renderActivity(); renderSidebar();
   document.getElementById('teamPtPoints').value = '';
   document.getElementById('teamPtReason').value = '';
@@ -563,18 +515,13 @@ async function addTeamPoints() {
 }
 
 // ── SCANNER ───────────────────────
-async function searchCamper(q) {
+function searchCamper(q) {
   const results = document.getElementById('searchResults');
   if (!q.trim()) { results.innerHTML = ''; return; }
-  const _allC   = await DB.getCampers();
-  const campers = _allC.filter(c => c.name.includes(q)).slice(0, 5);
-  const teamIds = [...new Set(campers.map(c => c.teamId))];
-  const teamsArr = await Promise.all(teamIds.map(id => DB.getTeam(id)));
-  const teamsMap = {};
-  teamsArr.forEach(t => { if(t) teamsMap[t.id] = t; });
-  results.innerHTML = campers.map(c => {
-    const team = teamsMap[c.teamId];
-    return `<div class="camper-card" style="cursor:pointer" onclick="(async()=>{ await showScannerResult('${c.id}') })()">
+  const campers = DB.getCampers().filter(c => c.name.includes(q));
+  results.innerHTML = campers.slice(0,5).map(c => {
+    const team = DB.getTeam(c.teamId);
+    return `<div class="camper-card" style="cursor:pointer" onclick="showScannerResult('${c.id}')">
       <div class="camper-card-avatar" style="background:${team?.color||'#333'}18;color:${team?.color||'#aaa'};border-color:${team?.color||'#555'}40">${c.name.charAt(0)}</div>
       <div class="camper-card-info">
         <div class="camper-card-name">${c.name}</div>
@@ -585,12 +532,11 @@ async function searchCamper(q) {
   }).join('') || '<div style="font-size:12px;color:var(--text-shadow);padding:8px">ไม่พบน้อง</div>';
 }
 
-
-async function showScannerResult(camperId) {
+function showScannerResult(camperId) {
   scannerCamperId = camperId;
-  const camper = await DB.getCamper(camperId);
-  const team   = await DB.getTeam(camper?.teamId);
-  const subs   = await DB.getCamperSubmissions(camperId);
+  const camper = DB.getCamper(camperId);
+  const team   = DB.getTeam(camper?.teamId);
+  const subs   = DB.getCamperSubmissions(camperId);
   const approved = subs.filter(s=>s.status==='approved').length;
   document.getElementById('scannerResult').innerHTML = `
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
@@ -616,10 +562,10 @@ async function showScannerResult(camperId) {
   document.getElementById('scanSearch').value = '';
 }
 
-async function openScannerPointModal() {
+function openScannerPointModal() {
   if (!scannerCamperId) return;
-  const camper = await DB.getCamper(scannerCamperId);
-  const team   = await DB.getTeam(camper?.teamId);
+  const camper = DB.getCamper(scannerCamperId);
+  const team   = DB.getTeam(camper?.teamId);
   document.getElementById('scannerModalName').textContent = camper?.name || '';
   document.getElementById('scannerModalTeam').textContent = team?.name || '';
   document.getElementById('scannerPtVal').value = '';
@@ -627,15 +573,15 @@ async function openScannerPointModal() {
   document.getElementById('scannerPointModal').classList.add('open');
 }
 
-async function confirmScannerPoints() {
+function confirmScannerPoints() {
   const pts    = parseInt(document.getElementById('scannerPtVal').value);
   const reason = document.getElementById('scannerPtReason').value.trim();
   if (isNaN(pts)) { showToast('กรอกคะแนน','error'); return; }
-  const camper = await DB.getCamper(scannerCamperId);
-  const team   = await DB.getTeam(camper?.teamId);
-  await DB.updateCamperScore(scannerCamperId, pts);
-  if (pts > 0) await DB.updateTeamScore(camper.teamId, pts);
-  await DB.pushActivity(`⚡ Scanner: ${pts>0?'+'+pts:pts}pt ให้ <b style="color:${team?.color}">${camper?.name}</b>${reason?' ('+reason+')':''}`);
+  const camper = DB.getCamper(scannerCamperId);
+  const team   = DB.getTeam(camper?.teamId);
+  DB.updateCamperScore(scannerCamperId, pts);
+  if (pts > 0) DB.updateTeamScore(camper.teamId, pts);
+  DB.pushActivity(`⚡ Scanner: ${pts>0?'+'+pts:pts}pt ให้ <b style="color:${team?.color}">${camper?.name}</b>${reason?' ('+reason+')':''}`);
   document.getElementById('scannerPointModal').classList.remove('open');
   showScannerResult(scannerCamperId);
   renderSidebar(); renderActivity();
@@ -666,8 +612,8 @@ function stopScanner() {
 }
 
 // ── LEADERBOARD / LIVEBOARD ───────
-async function renderLeaderboard() {
-  const _t = await DB.getTeams(); const teams = _t.sort((a,b)=>b.score-a.score);
+function renderLeaderboard() {
+  const teams = DB.getTeams().sort((a,b)=>b.score-a.score);
   const max   = teams[0]?.score||1;
   document.getElementById('statCards').innerHTML = teams.map((t,i)=>`
     <div class="stat-card"><div class="stat-card-bar" style="background:${t.color}"></div>
@@ -685,8 +631,8 @@ async function renderLeaderboard() {
     </div>`).join('');
 }
 
-async function renderLiveboard() {
-  const _t = await DB.getTeams(); const teams = _t.sort((a,b)=>b.score-a.score);
+function renderLiveboard() {
+  const teams = DB.getTeams().sort((a,b)=>b.score-a.score);
   const max   = teams[0]?.score||1;
   const rc    = ['first','second','third',''];
   const re    = ['⚡','🌊','☀️','💀'];
@@ -701,33 +647,20 @@ async function renderLiveboard() {
 }
 
 // ── ACTIVITY ──────────────────────
-async function renderActivity() {
-  const _acts3 = await DB.getActivities();
-  document.getElementById('activityFeed').innerHTML = _acts3.slice(0,20).map(a=>`
+function renderActivity() {
+  document.getElementById('activityFeed').innerHTML = DB.getActivities().slice(0,20).map(a=>`
     <div class="activity-item"><div>${a.text}</div><div class="activity-time">${a.time}</div></div>`).join('');
 }
 
 // ── COUNTDOWN ─────────────────────
-async function startCountdown() {
-  const wrap = document.getElementById('headerCountdown');
-  const el   = document.getElementById('countdownTimer');
-  const lbl  = document.getElementById('countdownLabel');
-  // Listen for countdown changes
-  DB.onCountdownChange((cd) => {
-    if (!cd || !cd.endTs) { if(wrap) wrap.style.display='none'; return; }
-    if(wrap) wrap.style.display='flex';
-    if(lbl) lbl.textContent = cd.label || 'เหลือเวลา';
-  });
-  // Tick every second
-  setInterval(async () => {
-    const secs = await DB.getCountdownRemaining();
-    if (secs === null) { if(wrap) wrap.style.display='none'; return; }
-    if(wrap) wrap.style.display='flex';
-    const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
-    if(el) el.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  }, 1000);
+function startCountdown() {
+  const el=document.getElementById('countdownTimer'), wrap=document.getElementById('headerCountdown'), lbl=document.getElementById('countdownLabel');
+  setInterval(()=>{
+    const s=DB.getCountdownRemaining(); if(s===null){wrap.style.display='none';return;}
+    wrap.style.display='flex'; lbl.textContent=DB.getCountdown().label||'เหลือเวลา';
+    el.textContent=`${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  },1000);
 }
-
 
 function setupOffline(){
   const b=document.getElementById('offlineBanner');

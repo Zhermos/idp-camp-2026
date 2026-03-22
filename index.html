@@ -3,9 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IDP CAMP 2026 — QR Generator</title>
+<title>TARTARUS — QR Generator</title>
 <link rel="stylesheet" href="style.css">
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
@@ -15,8 +14,8 @@
   <header class="header">
     <div class="header-left">
       <div class="logo">
-        <span class="logo-main">IDP CAMP</span>
-        <span class="logo-sub">IDP CAMP · 2026</span>
+        <span class="logo-main">TARTARUS</span>
+        <span class="logo-sub">CAMP · MMXXV</span>
       </div>
     </div>
     <div class="header-right">
@@ -105,9 +104,9 @@ function getBase() {
   return window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
 }
 
-async function init() {
+function init() {
   const base = getBase();
-  const teams = await DB.getTeams();
+  const teams = DB.getTeams();
 
   // Camper QRs
   const camperGrid = document.getElementById('camperQRs');

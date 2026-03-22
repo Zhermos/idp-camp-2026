@@ -1,10 +1,10 @@
 /* ═══════════════════════════════════════════════════════
    IDP CAMP 2026 — DATA LAYER
-   Firebase Realtime Database + Cloudinary Storage
+   API เหมือนเดิมทุกอย่าง (sync) แต่ sync กับ Firebase ใน background
+   HTML ทุกไฟล์ไม่ต้องแก้อะไรเลย
    ═══════════════════════════════════════════════════════ */
 'use strict';
 
-// ── FIREBASE CONFIG ───────────────────────────────────────
 const firebaseConfig = {
   apiKey:            "AIzaSyBI9o11kr2Heh8j8SAeeN5xdDlKVv1l8qA",
   authDomain:        "idp-camp-2026.firebaseapp.com",
@@ -15,46 +15,34 @@ const firebaseConfig = {
   appId:             "1:117274878785:web:76a061c7f390ef9ceff7c0",
 };
 
-// ── CLOUDINARY CONFIG ─────────────────────────────────────
-const CLOUDINARY = {
-  cloudName:    'dplksxazw',
-  uploadPreset: 'idp_camp',
-  uploadUrl()   { return `https://api.cloudinary.com/v1_1/${this.cloudName}/auto/upload`; },
-};
+const CLOUDINARY_CLOUD  = 'dplksxazw';
+const CLOUDINARY_PRESET = 'idp_camp';
 
-// ── FIREBASE INIT ─────────────────────────────────────────
-if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-const _db = firebase.database();
+let _fbReady = false, _db = null;
+try {
+  if (typeof firebase !== 'undefined') {
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    _db = firebase.database();
+    _fbReady = true;
+  }
+} catch(e) { console.warn('Firebase init failed:', e); }
 
-const ref    = (path) => _db.ref(path);
-const once   = (path) => ref(path).once('value').then(s => s.val());
-const set    = (path, val) => ref(path).set(val);
-const update = (path, val) => ref(path).update(val);
-const remove = (path) => ref(path).remove();
-const push   = (path, val) => ref(path).push(val);
-
-function timestamp() {
-  return new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
-}
-function isoNow() { return new Date().toISOString(); }
-
-// ── DEFAULT DATA ──────────────────────────────────────────
 const DEFAULT_TEAMS = [
-  { id:'red',    name:'ทีมฮาเดส',   color:'#c0392b', score:0, icon:'🔴', deity:'Hades'    },
-  { id:'green',  name:'ทีมอธีนา',   color:'#27ae60', score:0, icon:'🟢', deity:'Athena'   },
-  { id:'yellow', name:'ทีมอะพอลโล', color:'#d4a017', score:0, icon:'🟡', deity:'Apollo'   },
-  { id:'blue',   name:'ทีมโพไซดอน', color:'#2980b9', score:0, icon:'🔵', deity:'Poseidon' },
+  { id:'red',    name:'ทีมฮาเดส',    color:'#c0392b', score:0, icon:'🔴', deity:'Hades',    members:[] },
+  { id:'green',  name:'ทีมอธีนา',    color:'#27ae60', score:0, icon:'🟢', deity:'Athena',   members:[] },
+  { id:'yellow', name:'ทีมอะพอลโล',  color:'#d4a017', score:0, icon:'🟡', deity:'Apollo',   members:[] },
+  { id:'blue',   name:'ทีมโพไซดอน',  color:'#2980b9', score:0, icon:'🔵', deity:'Poseidon', members:[] },
 ];
 
 const DEFAULT_QUESTS = [
-  { id:'q1', icon:'🕺', name:'เต้นไก่ย่าง',       desc:'เต้นไก่ย่างให้ครบ 3 รอบพร้อมทีม ถ่ายวิดีโอส่ง',  points:200, type:'main',  evidence:'video', active:true },
-  { id:'q2', icon:'🎨', name:'วาดภาพทีม',          desc:'ระบายสีธงทีมให้สวยงาม ถ่ายรูปส่ง',                points:150, type:'main',  evidence:'image', active:true },
-  { id:'q3', icon:'🧩', name:'ต่อ Puzzle',          desc:'ต่อ Puzzle ให้เสร็จภายใน 15 นาที',                 points:100, type:'side',  evidence:'image', active:true },
-  { id:'q4', icon:'🎤', name:'ร้องเพลงประจำทีม',  desc:'ร้องเพลงของทีมพร้อมกัน ถ่ายคลิปส่ง',              points:180, type:'main',  evidence:'video', active:true },
-  { id:'q5', icon:'📸', name:'ถ่ายรูปกับพี่สต๊าฟ',desc:'ถ่ายรูปกับพี่สต๊าฟ 5 คนขึ้นไป',                   points:50,  type:'side',  evidence:'image', active:true },
-  { id:'q6', icon:'🍱', name:'รับประทานอาหารครบ',  desc:'รับประทานทุกมื้อพร้อมหน้า ถ่ายรูปหลักฐาน',         points:80,  type:'side',  evidence:'image', active:true },
-  { id:'q7', icon:'⭐', name:'ช่วยงานสต๊าฟ',       desc:'อาสาช่วยงานพี่สต๊าฟ 1 ครั้งขึ้นไป',                points:120, type:'bonus', evidence:'image', active:true },
-  { id:'q8', icon:'🎯', name:'เกมทายปริศนา',        desc:'ตอบคำถามปริศนาให้ได้ 5 ข้อขึ้นไป',                 points:100, type:'bonus', evidence:'image', active:true },
+  { id:1, icon:'🕺', name:'เต้นไก่ย่าง',       desc:'เต้นไก่ย่างให้ครบ 3 รอบพร้อมทีม ถ่ายวิดีโอส่ง',   points:200, type:'main',  evidence:'video', active:true },
+  { id:2, icon:'🎨', name:'วาดภาพทีม',          desc:'ระบายสีธงทีมให้สวยงาม ถ่ายรูปส่ง',                 points:150, type:'main',  evidence:'image', active:true },
+  { id:3, icon:'🧩', name:'ต่อ Puzzle',          desc:'ต่อ Puzzle ให้เสร็จภายใน 15 นาที',                  points:100, type:'side',  evidence:'image', active:true },
+  { id:4, icon:'🎤', name:'ร้องเพลงประจำทีม',  desc:'ร้องเพลงของทีมพร้อมกัน ถ่ายคลิปส่ง',               points:180, type:'main',  evidence:'video', active:true },
+  { id:5, icon:'📸', name:'ถ่ายรูปกับพี่สต๊าฟ',desc:'ถ่ายรูปกับพี่สต๊าฟ 5 คนขึ้นไป',                    points:50,  type:'side',  evidence:'image', active:true },
+  { id:6, icon:'🍱', name:'รับประทานอาหารครบ',  desc:'รับประทานทุกมื้อพร้อมหน้า ถ่ายรูปหลักฐาน',          points:80,  type:'side',  evidence:'image', active:true },
+  { id:7, icon:'⭐', name:'ช่วยงานสต๊าฟ',       desc:'อาสาช่วยงานพี่สต๊าฟ 1 ครั้งขึ้นไป',                 points:120, type:'bonus', evidence:'image', active:true },
+  { id:8, icon:'🎯', name:'เกมทายปริศนา',        desc:'ตอบคำถามปริศนาให้ได้ 5 ข้อขึ้นไป',                  points:100, type:'bonus', evidence:'image', active:true },
 ];
 
 const DEFAULT_STAFF = [
@@ -64,312 +52,178 @@ const DEFAULT_STAFF = [
 ];
 
 const DEFAULT_BADGES = [
-  { id:'pioneer', emoji:'🏅', name:'ผู้บุกเบิก', desc:'ส่งงานชิ้นแรก',          condition:'firstSubmission' },
-  { id:'artist',  emoji:'🎨', name:'ศิลปิน',     desc:'ผ่านภารกิจวาดภาพ',       condition:'quest', questId:'q2' },
-  { id:'dancer',  emoji:'🕺', name:'นักเต้น',    desc:'ผ่านภารกิจเต้นไก่ย่าง',  condition:'quest', questId:'q1' },
-  { id:'singer',  emoji:'🎤', name:'นักร้อง',    desc:'ผ่านภารกิจร้องเพลง',     condition:'quest', questId:'q4' },
-  { id:'puzzler', emoji:'🧩', name:'นักปริศนา',  desc:'ผ่านภารกิจต่อ Puzzle',    condition:'quest', questId:'q3' },
-  { id:'star',    emoji:'⭐', name:'ดาวค่าย',    desc:'ผ่านภารกิจครบ 5 ข้อ',    condition:'fiveQuests' },
-  { id:'owl',     emoji:'🦉', name:'ผู้รู้',     desc:'ผ่านภารกิจโบนัสครบ',     condition:'allBonus' },
-  { id:'thunder', emoji:'⚡', name:'เทพ',        desc:'อันดับ 1 ของทีม',         condition:'teamRank1' },
+  { id:'pioneer',  emoji:'🏅', name:'ผู้บุกเบิก',  desc:'ส่งงานชิ้นแรก',          questId:null, condition:'firstSubmission' },
+  { id:'artist',   emoji:'🎨', name:'ศิลปิน',      desc:'ผ่านภารกิจวาดภาพ',       questId:2,    condition:'quest' },
+  { id:'dancer',   emoji:'🕺', name:'นักเต้น',     desc:'ผ่านภารกิจเต้นไก่ย่าง',  questId:1,    condition:'quest' },
+  { id:'singer',   emoji:'🎤', name:'นักร้อง',     desc:'ผ่านภารกิจร้องเพลง',     questId:4,    condition:'quest' },
+  { id:'puzzler',  emoji:'🧩', name:'นักปริศนา',   desc:'ผ่านภารกิจต่อ Puzzle',    questId:3,    condition:'quest' },
+  { id:'star',     emoji:'⭐', name:'ดาวค่าย',     desc:'ผ่านภารกิจครบ 5 ข้อ',    questId:null, condition:'fiveQuests' },
+  { id:'owl',      emoji:'🦉', name:'ผู้รู้',      desc:'ผ่านภารกิจโบนัสครบ',     questId:null, condition:'allBonus' },
+  { id:'thunder',  emoji:'⚡', name:'เทพ',         desc:'อันดับ 1 ของทีม',         questId:null, condition:'teamRank1' },
 ];
 
-window.DEFAULT_BADGES = DEFAULT_BADGES;
-window.DEFAULT_TEAMS  = DEFAULT_TEAMS;
+const KEYS = {
+  teams:'idp_teams', quests:'idp_quests', campers:'idp_campers',
+  submissions:'idp_submissions', staff:'idp_staff', activities:'idp_activities',
+  countdown:'idp_countdown', session:'idp_session', nextId:'idp_nextid',
+};
 
-// ── SESSION (localStorage — จำ identity บนอุปกรณ์นี้) ─────
-const SESSION_KEY = 'idp_session_v1';
+function load(key, fallback) {
+  try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; } catch { return fallback; }
+}
+function save(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+  if (_fbReady && _db) try { _db.ref('store/' + key).set(value); } catch(e) {}
+}
+function nextId() { const n = load(KEYS.nextId, 1000); save(KEYS.nextId, n+1); return n; }
+function timestamp() { return new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' }); }
+function isoNow() { return new Date().toISOString(); }
 
-// ─────────────────────────────────────────────────────────
-//  DB — PUBLIC API
-// ---------------------------------------------------------
+function _syncFromFirebase() {
+  if (!_fbReady || !_db) return;
+  [KEYS.teams, KEYS.quests, KEYS.campers, KEYS.submissions, KEYS.staff, KEYS.activities, KEYS.countdown].forEach(key => {
+    _db.ref('store/' + key).once('value').then(snap => {
+      const val = snap.val();
+      if (val !== null && val !== undefined) localStorage.setItem(key, JSON.stringify(val));
+    }).catch(() => {});
+  });
+}
+
+function _listenFirebase() {
+  if (!_fbReady || !_db) return;
+  [KEYS.teams, KEYS.campers, KEYS.submissions, KEYS.activities, KEYS.countdown].forEach(key => {
+    _db.ref('store/' + key).on('value', snap => {
+      const val = snap.val();
+      if (val !== null && val !== undefined) localStorage.setItem(key, JSON.stringify(val));
+    });
+  });
+}
+
+function uploadFile(file, onProgress, onDone, onError) {
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CLOUDINARY_PRESET);
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/auto/upload`, true);
+  if (onProgress) xhr.upload.onprogress = e => { if (e.lengthComputable) onProgress(Math.round(e.loaded/e.total*100)); };
+  xhr.onload = () => { if (xhr.status === 200) { const r = JSON.parse(xhr.responseText); if(onDone) onDone(r.secure_url, r.resource_type); } else { if(onError) onError('Upload failed'); } };
+  xhr.onerror = () => { if(onError) onError('Network error'); };
+  xhr.send(fd);
+}
+
 const DB = {
-
-  // ── BOOTSTRAP ──
-  async bootstrap() {
-    const existing = await once('teams');
-    if (!existing) {
-      const teamsObj = {};
-      DEFAULT_TEAMS.forEach(t => { teamsObj[t.id] = t; });
-      await set('teams', teamsObj);
-
-      const questsObj = {};
-      DEFAULT_QUESTS.forEach(q => { questsObj[q.id] = q; });
-      await set('quests', questsObj);
-
-      const staffObj = {};
-      DEFAULT_STAFF.forEach(s => { staffObj[s.id] = s; });
-      await set('staff', staffObj);
-    }
+  getTeams() { return load(KEYS.teams, DEFAULT_TEAMS); },
+  saveTeams(t) { save(KEYS.teams, t); },
+  getTeam(id) { return this.getTeams().find(t => t.id === id); },
+  updateTeamScore(teamId, delta) {
+    const teams = this.getTeams(), t = teams.find(t => t.id === teamId);
+    if (t) { t.score = Math.max(0, t.score + delta); save(KEYS.teams, teams); }
   },
-
-  // ── TEAMS ──
-  async getTeams() {
-    const val = await once('teams');
-    return val ? Object.values(val) : DEFAULT_TEAMS;
+  getQuests() { return load(KEYS.quests, DEFAULT_QUESTS); },
+  saveQuests(q) { save(KEYS.quests, q); },
+  addQuest(q) { const qs = this.getQuests(); q.id = nextId(); qs.push(q); save(KEYS.quests, qs); return q; },
+  deleteQuest(id) { save(KEYS.quests, this.getQuests().filter(q => q.id !== id)); },
+  getCampers() { return load(KEYS.campers, []); },
+  getCamper(id) { return this.getCampers().find(c => c.id === id); },
+  upsertCamper(camper) {
+    const cs = this.getCampers(), idx = cs.findIndex(c => c.id === camper.id);
+    if (idx >= 0) cs[idx] = { ...cs[idx], ...camper }; else cs.push(camper);
+    save(KEYS.campers, cs);
   },
-  async getTeam(id) { return await once(`teams/${id}`); },
-  async saveTeams(arr) {
-    const obj = {};
-    arr.forEach(t => { obj[t.id] = t; });
-    await set('teams', obj);
+  getCampersByTeam(teamId) { return this.getCampers().filter(c => c.teamId === teamId); },
+  updateCamperScore(camperId, delta) {
+    const cs = this.getCampers(), c = cs.find(c => c.id === camperId);
+    if (c) { c.score = Math.max(0, (c.score||0) + delta); save(KEYS.campers, cs); }
   },
-  async updateTeamScore(teamId, delta) {
-    const t = await this.getTeam(teamId);
-    if (t) await set(`teams/${teamId}/score`, Math.max(0, (t.score||0) + delta));
-  },
-
-  // ── QUESTS ──
-  async getQuests() {
-    const val = await once('quests');
-    return val ? Object.values(val) : DEFAULT_QUESTS;
-  },
-  async saveQuests(arr) {
-    const obj = {};
-    arr.forEach(q => { obj[q.id] = q; });
-    await set('quests', obj);
-  },
-  async addQuest(q) {
-    const r = ref('quests').push();
-    q.id = r.key;
-    await set(`quests/${q.id}`, q);
-    return q;
-  },
-  async deleteQuest(id) { await remove(`quests/${id}`); },
-
-  // ── CAMPERS ──
-  async getCampers() {
-    const val = await once('campers');
-    return val ? Object.values(val) : [];
-  },
-  async getCamper(id) { return await once(`campers/${id}`); },
-  async upsertCamper(camper) { await set(`campers/${camper.id}`, camper); },
-  async getCampersByTeam(teamId) {
-    const all = await this.getCampers();
-    return all.filter(c => c.teamId === teamId);
-  },
-  async updateCamperScore(camperId, delta) {
-    const c = await this.getCamper(camperId);
-    if (c) await set(`campers/${camperId}/score`, Math.max(0, (c.score||0) + delta));
-  },
-  async awardBadge(camperId, badgeId) {
-    const badges = await once(`campers/${camperId}/badges`) || {};
-    if (!badges[badgeId]) {
-      await set(`campers/${camperId}/badges/${badgeId}`, true);
-      return true;
-    }
+  awardBadge(camperId, badgeId) {
+    const cs = this.getCampers(), c = cs.find(c => c.id === camperId);
+    if (c) { if (!c.badges) c.badges = []; if (!c.badges.includes(badgeId)) { c.badges.push(badgeId); save(KEYS.campers, cs); return true; } }
     return false;
   },
-
-  // ── BADGE AUTO-AWARD ──
-  async checkAndAwardBadges(camperId) {
-    const camper       = await this.getCamper(camperId);
-    if (!camper) return [];
-    const allSubs      = await this.getCamperSubmissions(camperId);
-    const approvedSubs = allSubs.filter(s => s.status === 'approved');
-    const approvedIds  = new Set(approvedSubs.map(s => s.questId));
-    const quests       = await this.getQuests();
-    const bonusQuests  = quests.filter(q => q.type === 'bonus' && q.active);
-    const allBonusDone = bonusQuests.length > 0 && bonusQuests.every(q => approvedIds.has(q.id));
-    const teammates    = (await this.getCampersByTeam(camper.teamId)).sort((a,b)=>(b.score||0)-(a.score||0));
-    const isRank1      = teammates.length > 0 && teammates[0].id === camperId && (camper.score||0) > 0;
-
+  checkAndAwardBadges(camperId) {
+    const camper = this.getCamper(camperId); if (!camper) return [];
+    const approvedSubs = this.getCamperSubmissions(camperId).filter(s => s.status === 'approved');
+    const approvedQuestIds = new Set(approvedSubs.map(s => s.questId));
+    const bonusQuests = this.getQuests().filter(q => q.type === 'bonus' && q.active);
+    const allBonusDone = bonusQuests.length > 0 && bonusQuests.every(q => approvedQuestIds.has(q.id));
+    const teammates = this.getCampersByTeam(camper.teamId).sort((a,b) => (b.score||0) - (a.score||0));
+    const isRank1 = teammates.length > 0 && teammates[0].id === camperId && (camper.score||0) > 0;
     const awarded = [];
     for (const badge of DEFAULT_BADGES) {
       let earned = false;
       switch (badge.condition) {
         case 'firstSubmission': earned = approvedSubs.length >= 1; break;
-        case 'quest':           earned = badge.questId && approvedIds.has(badge.questId); break;
-        case 'fiveQuests':      earned = approvedSubs.length >= 5; break;
-        case 'allBonus':        earned = allBonusDone; break;
-        case 'teamRank1':       earned = isRank1; break;
+        case 'quest': earned = badge.questId != null && approvedQuestIds.has(badge.questId); break;
+        case 'fiveQuests': earned = approvedSubs.length >= 5; break;
+        case 'allBonus': earned = allBonusDone; break;
+        case 'teamRank1': earned = isRank1; break;
       }
-      if (earned && await this.awardBadge(camperId, badge.id)) awarded.push(badge);
+      if (earned && this.awardBadge(camperId, badge.id)) awarded.push(badge);
     }
     return awarded;
   },
-
-  // ── SUBMISSIONS ──
-  async getSubmissions() {
-    const val = await once('submissions');
-    if (!val) return [];
-    return Object.entries(val)
-      .map(([id, s]) => ({ ...s, id }))
-      .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+  getSubmissions() { return load(KEYS.submissions, []); },
+  addSubmission(sub) {
+    const subs = this.getSubmissions();
+    sub.id = nextId(); sub.createdAt = isoNow(); sub.status = 'pending';
+    subs.unshift(sub); save(KEYS.submissions, subs); return sub;
   },
-  async addSubmission(sub) {
-    const r = ref('submissions').push();
-    sub.id = r.key;
-    sub.createdAt = isoNow();
-    sub.status = 'pending';
-    await set(`submissions/${sub.id}`, sub);
-    return sub;
+  updateSubmission(id, patch) {
+    const subs = this.getSubmissions(), idx = subs.findIndex(s => s.id === id);
+    if (idx >= 0) { subs[idx] = { ...subs[idx], ...patch }; save(KEYS.submissions, subs); }
   },
-  async updateSubmission(id, patch) { await update(`submissions/${id}`, patch); },
-  async getPendingSubmissions() {
-    const all = await this.getSubmissions();
-    return all.filter(s => s.status === 'pending');
+  getPendingSubmissions() { return this.getSubmissions().filter(s => s.status === 'pending'); },
+  getCamperSubmissions(camperId) { return this.getSubmissions().filter(s => s.camperId === camperId); },
+  getStaff() { return load(KEYS.staff, DEFAULT_STAFF); },
+  saveStaff(s) { save(KEYS.staff, s); },
+  addStaff(m) { const s = this.getStaff(); m.id = 'staff' + nextId(); s.push(m); save(KEYS.staff, s); },
+  removeStaff(id) { save(KEYS.staff, this.getStaff().filter(s => s.id !== id)); },
+  getActivities() { return load(KEYS.activities, []); },
+  pushActivity(text) {
+    const a = this.getActivities(); a.unshift({ text, time: timestamp(), ts: isoNow() });
+    if (a.length > 50) a.pop(); save(KEYS.activities, a);
   },
-  async getCamperSubmissions(camperId) {
-    const all = await this.getSubmissions();
-    return all.filter(s => s.camperId === camperId);
+  getCountdown() { return load(KEYS.countdown, { endTs: null, label: 'เหลือเวลา' }); },
+  setCountdown(h, m, label) { save(KEYS.countdown, { endTs: Date.now() + (h*3600+m*60)*1000, label: label||'เหลือเวลา' }); },
+  getCountdownRemaining() { const {endTs} = this.getCountdown(); return endTs ? Math.max(0, Math.floor((endTs-Date.now())/1000)) : null; },
+  getSession() { return load(KEYS.session, null); },
+  setSession(s) { try { localStorage.setItem(KEYS.session, JSON.stringify(s)); } catch {} },
+  clearSession() { localStorage.removeItem(KEYS.session); },
+  resetAll() { Object.values(KEYS).forEach(k => localStorage.removeItem(k)); if(_fbReady&&_db) _db.ref('store').remove(); },
+  resetScoresOnly() {
+    save(KEYS.teams, DEFAULT_TEAMS.map(t => ({ ...t, score: 0 })));
+    save(KEYS.submissions, []); save(KEYS.activities, []);
+    save(KEYS.campers, this.getCampers().map(c => ({ ...c, score: 0, badges: [] })));
   },
-
-  // ── CLOUDINARY UPLOAD ──
-  // รับ File object → อัปโหลด → คืน { url, resourceType }
-  async uploadFile(file, onProgress) {
-    return new Promise((resolve, reject) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', CLOUDINARY.uploadPreset);
-
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', CLOUDINARY.uploadUrl(), true);
-
-      if (onProgress) {
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) onProgress(Math.round(e.loaded / e.total * 100));
-        };
-      }
-
-      xhr.onload = () => {
-        if (xhr.status === 200) {
-          const res = JSON.parse(xhr.responseText);
-          resolve({
-            url:          res.secure_url,
-            resourceType: res.resource_type, // 'image' | 'video'
-            publicId:     res.public_id,
-            duration:     res.duration || null,
-          });
-        } else {
-          reject(new Error('Upload failed: ' + xhr.status));
-        }
-      };
-      xhr.onerror = () => reject(new Error('Network error during upload'));
-      xhr.send(formData);
-    });
-  },
-
-  // ── STAFF ──
-  async getStaff() {
-    const val = await once('staff');
-    return val ? Object.values(val) : DEFAULT_STAFF;
-  },
-  async addStaff(member) {
-    const r = ref('staff').push();
-    member.id = r.key;
-    await set(`staff/${member.id}`, member);
-  },
-  async removeStaff(id) { await remove(`staff/${id}`); },
-
-  // ── ACTIVITIES ──
-  async getActivities() {
-    const val = await once('activities');
-    if (!val) return [];
-    return Object.values(val)
-      .sort((a,b) => new Date(b.ts) - new Date(a.ts))
-      .slice(0, 50);
-  },
-  async pushActivity(text) {
-    await push('activities', { text, time: timestamp(), ts: isoNow() });
-  },
-
-  // ── REALTIME LISTENERS ──
-  onTeamsChange(cb) {
-    const r = ref('teams');
-    const h = s => cb(s.val() ? Object.values(s.val()) : []);
-    r.on('value', h);
-    return () => r.off('value', h);
-  },
-  onActivitiesChange(cb) {
-    const r = ref('activities');
-    const h = s => {
-      const val = s.val();
-      cb(val ? Object.values(val).sort((a,b)=>new Date(b.ts)-new Date(a.ts)).slice(0,20) : []);
-    };
-    r.on('value', h);
-    return () => r.off('value', h);
-  },
-  onSubmissionsChange(cb) {
-    const r = ref('submissions');
-    const h = s => {
-      const val = s.val();
-      cb(val ? Object.entries(val).map(([id,v])=>({...v,id})).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)) : []);
-    };
-    r.on('value', h);
-    return () => r.off('value', h);
-  },
-  onCamperChange(camperId, cb) {
-    const r = ref(`campers/${camperId}`);
-    r.on('value', s => cb(s.val()));
-    return () => r.off('value');
-  },
-
-  // ── COUNTDOWN ──
-  async getCountdown() { return await once('countdown') || { endTs: null, label: 'เหลือเวลา' }; },
-  async setCountdown(h, m, label) {
-    await set('countdown', { endTs: Date.now() + (h*3600+m*60)*1000, label: label||'เหลือเวลา' });
-  },
-  async clearCountdown() { await remove('countdown'); },
-  async getCountdownRemaining() {
-    const cd = await this.getCountdown();
-    return cd.endTs ? Math.max(0, Math.floor((cd.endTs - Date.now()) / 1000)) : null;
-  },
-  onCountdownChange(cb) {
-    const r = ref('countdown');
-    r.on('value', s => cb(s.val() || { endTs: null, label: 'เหลือเวลา' }));
-    return () => r.off('value');
-  },
-
-  // ── SESSION ──
-  getSession() {
-    try { const r = localStorage.getItem(SESSION_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
-  },
-  setSession(s) { try { localStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch {} },
-  clearSession() { localStorage.removeItem(SESSION_KEY); },
-
-  // ── RESET ──
-  async resetAll() {
-    await Promise.all(['teams','quests','campers','submissions','activities','countdown','staff'].map(remove));
-    await this.bootstrap();
-  },
-  async resetScoresOnly() {
-    const [teams, campers] = await Promise.all([this.getTeams(), this.getCampers()]);
-    await Promise.all([
-      ...teams.map(t => set(`teams/${t.id}/score`, 0)),
-      ...campers.map(c => update(`campers/${c.id}`, { score:0, badges:{} })),
-      remove('submissions'),
-      remove('activities'),
-    ]);
-  },
-
-  // ── EXPORT CSV ──
-  async exportCSV() {
-    const [teams, campers, subs] = await Promise.all([this.getTeams(), this.getCampers(), this.getSubmissions()]);
+  exportCSV() {
+    const teams = this.getTeams(), campers = this.getCampers(), subs = this.getSubmissions();
     let csv = 'TEAM SCORES\nทีม,คะแนน\n';
-    teams.sort((a,b)=>b.score-a.score).forEach(t => { csv += `${t.name},${t.score||0}\n`; });
+    teams.sort((a,b)=>b.score-a.score).forEach(t => { csv += `${t.name},${t.score}\n`; });
     csv += '\nCAMPER SCORES\nชื่อ,ทีม,คะแนน,badges\n';
     campers.sort((a,b)=>(b.score||0)-(a.score||0)).forEach(c => {
       const team = teams.find(t=>t.id===c.teamId);
-      const badges = c.badges ? Object.keys(c.badges).join('|') : '';
-      csv += `${c.name},${team?.name||'-'},${c.score||0},${badges}\n`;
+      csv += `${c.name},${team?.name||'-'},${c.score||0},${(c.badges||[]).join('|')}\n`;
     });
     csv += '\nSUBMISSIONS\nภารกิจ,น้อง,ทีม,สถานะ,คะแนน,เวลา\n';
     subs.forEach(s => {
-      const c = campers.find(x=>x.id===s.camperId);
-      const t = teams.find(x=>x.id===s.teamId);
-      csv += `${s.questName},${c?.name||'-'},${t?.name||'-'},${s.status},${s.points||0},${s.createdAt}\n`;
+      const c = campers.find(c=>c.id===s.camperId), team = teams.find(t=>t.id===s.teamId);
+      csv += `${s.questName},${c?.name||'-'},${team?.name||'-'},${s.status},${s.points||0},${s.createdAt}\n`;
     });
     return csv;
   },
+  uploadFile(file, onProgress, onDone, onError) { uploadFile(file, onProgress, onDone, onError); },
 };
 
 const QR = {
-  base() { return `${location.origin}${location.pathname.replace(/[^/]*$/,'')}`; },
-  camperUrl(teamId) { return this.base() + `camper.html?team=${teamId}`; },
-  staffUrl()  { return this.base() + 'staff.html'; },
-  adminUrl()  { return this.base() + 'admin.html'; },
+  camperUrl(teamId) { return `${location.origin}${location.pathname.replace(/[^/]*$/,'')}camper.html?team=${teamId}`; },
+  staffUrl() { return `${location.origin}${location.pathname.replace(/[^/]*$/,'')}staff.html`; },
+  adminUrl() { return `${location.origin}${location.pathname.replace(/[^/]*$/,'')}admin.html`; },
 };
 
-// Auto bootstrap
-DB.bootstrap().catch(e => console.error('Firebase bootstrap error:', e));
+(function bootstrap() {
+  if (!localStorage.getItem(KEYS.teams))  save(KEYS.teams,  DEFAULT_TEAMS);
+  if (!localStorage.getItem(KEYS.quests)) save(KEYS.quests, DEFAULT_QUESTS);
+  if (!localStorage.getItem(KEYS.staff))  save(KEYS.staff,  DEFAULT_STAFF);
+  _syncFromFirebase();
+  setTimeout(_listenFirebase, 1500);
+})();

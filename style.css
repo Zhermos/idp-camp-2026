@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════
-   IDP CAMP — SHARED STYLESHEET
+   TARTARUS CAMP — SHARED STYLESHEET
    Theme: Prison · Greek Myth · Harry Potter
    ═══════════════════════════════════════════ */
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Sarabun:wght@300;400;600;700&family=UnifrakturMaguntia&family=Space+Mono:wght@400;700&display=swap');
@@ -449,7 +449,7 @@ body {
 .plb-score { font-family:var(--font-mono); font-size:13px; font-weight:700; }
 
 /* ═══════════════════════════════════════════
-   IDP CAMP v2 ADDITIONS
+   TARTARUS v2 ADDITIONS
    Mobile responsive + Badge notifications + Polish
    ═══════════════════════════════════════════ */
 
