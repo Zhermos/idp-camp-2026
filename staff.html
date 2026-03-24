@@ -373,10 +373,19 @@ function renderReviewQueue() {
           </div>
           <div class="review-time">${new Date(s.createdAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</div>
         </div>
-        <div class="review-media" onclick="showToast('🔍 Media viewer — เชื่อมต่อ backend เพื่อดูไฟล์จริง')">
-          <span style="font-size:28px">${s.hasFile?'🖼️':'📝'}</span>
-          <span>${s.hasFile?'คลิกเพื่อดูหลักฐาน':'ไม่มีไฟล์แนบ'}</span>
-        </div>
+        ${s.fileUrl
+          ? s.fileType === 'video'
+            ? `<div class="review-media" style="height:auto;padding:0;overflow:hidden;border-radius:var(--r-lg)">
+                <video src="${s.fileUrl}" controls style="width:100%;max-height:300px;border-radius:var(--r-lg);background:#000"></video>
+               </div>`
+            : `<div class="review-media" style="height:auto;padding:0;overflow:hidden;border-radius:var(--r-lg);cursor:pointer" onclick="window.open('${s.fileUrl}','_blank')">
+                <img src="${s.fileUrl}" style="width:100%;max-height:300px;object-fit:contain;background:#111;border-radius:var(--r-lg)">
+               </div>`
+          : `<div class="review-media">
+              <span style="font-size:28px">📝</span>
+              <span>ไม่มีไฟล์แนบ</span>
+             </div>`
+        }
         ${s.desc ? `<div class="review-desc">"${s.desc}"</div>` : ''}
         <div class="review-actions">
           <button class="btn-approve" onclick="approve(${s.id})">✅ อนุมัติ +${s.questPoints}pt</button>

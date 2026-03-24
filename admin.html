@@ -246,6 +246,7 @@
               <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
                 <button class="btn btn-danger btn-full" onclick="confirmReset('scores')">🔄 Reset คะแนน (คงน้องไว้)</button>
                 <button class="btn btn-danger btn-full" onclick="confirmReset('all')" style="background:rgba(192,57,43,.2)">💣 Reset ทั้งหมด (ล้างสมบูรณ์)</button>
+                <button class="btn btn-danger btn-full" onclick="confirmReset('firebase')" style="background:rgba(139,0,0,.3);margin-top:4px">🗑 ลบข้อมูลทั้งหมดออกจาก Firebase</button>
                 <div style="font-size:11px;color:var(--text-shadow);line-height:1.6">Reset คะแนน: ล้างคะแนน + submissions ทั้งหมด แต่คงน้องและภารกิจไว้<br>Reset ทั้งหมด: ล้าง localStorage ทั้งหมด (ไม่สามารถกู้คืนได้)</div>
               </div>
             </div>
@@ -413,7 +414,11 @@ function setTimer() {
 }
 
 function clearTimer() {
-  localStorage.removeItem('tq_countdown');
+  // Clear from both localStorage and Firebase
+  localStorage.removeItem('idp_countdown');
+  if (typeof _db !== 'undefined' && _db) {
+    try { _db.ref('store/idp_countdown').remove(); } catch(e) {}
+  }
   showToast('⏹ หยุด Timer แล้ว');
 }
 
@@ -548,13 +553,16 @@ function exportJSON() {
 }
 
 function confirmReset(type) {
-  const titles = { scores:'Reset คะแนนทั้งหมด?', all:'Reset ทั้งหมด?' };
-  const subs   = { scores:'ลบคะแนน + submissions ทั้งหมด (ข้อมูลน้องและภารกิจยังอยู่)', all:'ล้าง localStorage ทั้งหมด ไม่สามารถกู้คืนได้!' };
+  const titles = { scores:'Reset คะแนนทั้งหมด?', all:'Reset ทั้งหมด?', firebase:'ลบข้อมูลทั้งหมดออกจาก Firebase?' };
+  const subs   = { scores:'ลบคะแนน + submissions ทั้งหมด (ข้อมูลน้องและภารกิจยังอยู่)', all:'ล้างข้อมูลทั้งหมด ไม่สามารถกู้คืนได้!', firebase:'ลบข้อมูลทั้งหมดออกจาก Firebase และ localStorage — ทุกอุปกรณ์จะถูกล้าง!' };
   document.getElementById('confirmTitle').textContent = titles[type];
   document.getElementById('confirmSub').textContent   = subs[type];
   document.getElementById('confirmOkBtn').onclick = () => {
     if (type==='scores') DB.resetScoresOnly();
-    else DB.resetAll();
+    else if (type==='firebase') {
+      DB.resetAll();
+      showToast('🗑 ลบข้อมูลทั้งหมดแล้ว', 'error');
+    } else DB.resetAll();
     document.getElementById('confirmModal').classList.remove('open');
     renderSidebar(); renderExportPage();
     showToast(type==='all'?'💣 Reset สมบูรณ์':'🔄 Reset คะแนนแล้ว', type==='all'?'error':'success');
