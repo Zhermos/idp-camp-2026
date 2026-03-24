@@ -273,7 +273,6 @@ function showRegister() {
 function registerCamper() {
   const name = document.getElementById('regName').value.trim();
   if (!name) { showToast('กรุณากรอกชื่อ', 'error'); return; }
-  // Try localStorage first, fallback to DEFAULT_TEAMS if Firebase hasn't synced yet
   let team = DB.getTeam(teamId);
   if (!team) team = DEFAULT_TEAMS.find(t => t.id === teamId);
   if (!team) { showToast('ไม่พบทีม กรุณาสแกน QR ใหม่', 'error'); return; }
