@@ -300,8 +300,10 @@
     gap: 8px;
     opacity: 0;
     transition: opacity .3s;
+    z-index: 9999;
+    pointer-events: auto;
   }
-  body:hover .control-bar { opacity: 1; }
+  body:hover .control-bar { opacity: 1; pointer-events: auto; }
 
   /* ── MEDAL ICONS ── */
   .medal-r1::before { content: '👑'; font-size: 14px; margin-right: 4px; }
@@ -433,13 +435,18 @@ function toggleFullscreen() {
 // Initial render + auto-refresh every 5s
 render();
 setInterval(render, 5000);
-// Countdown tick every second
+// Countdown - tick every second from localStorage (which Firebase keeps updated)
 setInterval(() => {
   const secs = DB.getCountdownRemaining();
-  if (secs === null) { document.getElementById('countdownBlock').style.visibility='hidden'; return; }
-  document.getElementById('countdownBlock').style.visibility='visible';
+  const block = document.getElementById('countdownBlock');
+  const timerEl = document.getElementById('liveTimer');
+  const labelEl = document.getElementById('liveTimerLabel');
+  if (secs === null) { block.style.visibility='hidden'; return; }
+  block.style.visibility='visible';
+  const cd = DB.getCountdown();
+  if (labelEl) labelEl.textContent = cd.label || 'เหลือเวลา';
   const h = Math.floor(secs/3600), m = Math.floor((secs%3600)/60), s = secs%60;
-  document.getElementById('liveTimer').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  timerEl.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }, 1000);
 </script>
 </body>
