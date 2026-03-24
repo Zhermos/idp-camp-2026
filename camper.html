@@ -285,7 +285,7 @@ function registerCamper() {
   // Add to team members
   const teams = DB.getTeams();
   const t = teams.find(t => t.id === teamId);
-  if (t && !t.members.includes(camperId)) { t.members.push(camperId); DB.saveTeams(teams); }
+  if (t) { if (!t.members) t.members = []; if (!t.members.includes(camperId)) { t.members.push(camperId); DB.saveTeams(teams); } }
 
   session = { camperId, teamId, name };
   DB.setSession(session);
@@ -329,6 +329,7 @@ function renderSidebar() {
     </div>`).join('');
 
   // Pending badge
+  if (!session) return;
   const pending = DB.getCamperSubmissions(session.camperId).filter(s => s.status === 'pending').length;
   const pb = document.getElementById('pendingBadge');
   if (pending > 0) { pb.textContent = pending; pb.style.display = 'inline'; }
@@ -534,7 +535,7 @@ function renderActivity() {
 }
 function refreshActivity() {
   renderActivity();
-  renderSidebar();
+  if (session) renderSidebar();
   if (document.getElementById('page-leaderboard').classList.contains('active')) renderLeaderboard();
 }
 
