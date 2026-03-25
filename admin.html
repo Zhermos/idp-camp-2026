@@ -168,16 +168,13 @@
             <p class="page-subtitle">จัดการพี่สต๊าฟและสิทธิ์การเข้าถึง</p>
           </div>
           <div class="card">
-            <div class="card-header"><span class="card-title">✦ เพิ่มสต๊าฟใหม่</span></div>
+            <div class="card-header"><span class="card-title">✦ เพิ่ม Account ใหม่</span></div>
             <div class="card-body">
+              <div style="font-size:12px;color:var(--text-shadow);margin-bottom:12px">สร้างชื่อ account ไว้ก่อน — พี่สต๊าฟจะตั้ง PIN เองครั้งแรกที่ login</div>
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">ชื่อ</label>
                   <input class="form-input" id="staffName" placeholder="ชื่อพี่สต๊าฟ">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">PIN</label>
-                  <input class="form-input" id="staffPin" type="password" placeholder="PIN 4 ตัว" maxlength="10">
                 </div>
                 <div class="form-group">
                   <label class="form-label">Role</label>
@@ -187,7 +184,7 @@
                   </select>
                 </div>
               </div>
-              <button class="btn btn-primary" onclick="addStaff()">✦ เพิ่มสต๊าฟ</button>
+              <button class="btn btn-primary" onclick="addStaff()">✦ สร้าง Account</button>
             </div>
           </div>
           <div class="card mt-16">
@@ -246,7 +243,6 @@
               <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
                 <button class="btn btn-danger btn-full" onclick="confirmReset('scores')">🔄 Reset คะแนน (คงน้องไว้)</button>
                 <button class="btn btn-danger btn-full" onclick="confirmReset('all')" style="background:rgba(192,57,43,.2)">💣 Reset ทั้งหมด (ล้างสมบูรณ์)</button>
-                <button class="btn btn-danger btn-full" onclick="confirmReset('firebase')" style="background:rgba(139,0,0,.3);margin-top:4px">🗑 ลบข้อมูลทั้งหมดออกจาก Firebase</button>
                 <div style="font-size:11px;color:var(--text-shadow);line-height:1.6">Reset คะแนน: ล้างคะแนน + submissions ทั้งหมด แต่คงน้องและภารกิจไว้<br>Reset ทั้งหมด: ล้าง localStorage ทั้งหมด (ไม่สามารถกู้คืนได้)</div>
               </div>
             </div>
@@ -301,22 +297,99 @@
 <script src="data.js"></script>
 <script>
 // ── LOGIN ─────────────────────────
+const ADMIN_SESSION_KEY = 'idp_admin_session';
+let adminSession = null;
+let _selectedAdminId = null;
+
+function loadNameSelect() {
+  const allStaff = DB.getStaff();
+  const admins = allStaff.filter(s => s.role === 'admin');
+  document.getElementById('nameSelect').innerHTML =
+    '<option value="">— เลือกชื่อ —</option>' +
+    admins.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+}
+
+function onNameSelect() {
+  _selectedAdminId = document.getElementById('nameSelect').value;
+}
+
+function proceedToPin() {
+  _selectedAdminId = document.getElementById('nameSelect').value;
+  if (!_selectedAdminId) { showToast('กรุณาเลือกชื่อ', 'error'); return; }
+  const staff = DB.getStaff().find(s => s.id === _selectedAdminId);
+  document.getElementById('stepName').style.display = 'none';
+  document.getElementById('stepPin').style.display  = 'block';
+  document.getElementById('adminWelcomeMsg').textContent = 'สวัสดี ' + staff.name + ' 👑';
+  const isFirstTime = !staff.pin || staff.pin === '';
+  document.getElementById('pinLabel').textContent = isFirstTime ? 'ตั้ง PIN ของคุณ (ครั้งแรก)' : 'กรอก PIN';
+  document.getElementById('pinConfirmWrap').style.display = isFirstTime ? 'block' : 'none';
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinInput').focus();
+}
+
+function backToName() {
+  document.getElementById('stepPin').style.display  = 'none';
+  document.getElementById('stepName').style.display = 'block';
+  _selectedAdminId = null;
+}
+
 function adminLogin() {
-  const pin  = document.getElementById('pinInput').value.trim();
-  const staff = DB.getStaff().find(s => s.pin === pin && s.role === 'admin');
-  if (!staff) { showToast('PIN ไม่ถูกต้องหรือไม่มีสิทธิ์ Admin', 'error'); return; }
+  if (!_selectedAdminId) { backToName(); return; }
+  const allStaff = DB.getStaff();
+  const staff = allStaff.find(s => s.id === _selectedAdminId);
+  if (!staff || staff.role !== 'admin') { showToast('ไม่มีสิทธิ์ Admin', 'error'); return; }
+  const pin = document.getElementById('pinInput').value.trim();
+  if (!pin) { showToast('กรุณากรอก PIN', 'error'); return; }
+  const isFirstTime = !staff.pin || staff.pin === '';
+  if (isFirstTime) {
+    const confirm = document.getElementById('pinConfirm').value.trim();
+    if (pin !== confirm) { showToast('PIN ไม่ตรงกัน', 'error'); return; }
+    if (pin.length < 4)  { showToast('PIN ต้องมีอย่างน้อย 4 ตัว', 'error'); return; }
+    const idx = allStaff.findIndex(s => s.id === _selectedAdminId);
+    allStaff[idx].pin = pin;
+    DB.saveStaff(allStaff);
+    showToast('✅ ตั้ง PIN เรียบร้อย!', 'success');
+  } else {
+    if (staff.pin !== pin) { showToast('PIN ไม่ถูกต้อง', 'error'); return; }
+  }
+  adminSession = allStaff.find(s => s.id === _selectedAdminId);
+  try { localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({ id: adminSession.id, name: adminSession.name })); } catch(e) {}
   document.getElementById('loginWrap').style.display = 'none';
-  const appWrap = document.getElementById('appWrap');
-  appWrap.style.display = 'flex';
+  document.getElementById('appWrap').style.display = 'flex';
   initApp();
 }
 
 function logout() {
+  adminSession = null;
+  try { localStorage.removeItem(ADMIN_SESSION_KEY); } catch(e) {}
   document.getElementById('appWrap').style.display  = 'none';
   document.getElementById('loginWrap').style.display = 'flex';
   document.getElementById('loginWrap').style.flexDirection = 'column';
-  document.getElementById('pinInput').value = '';
+  document.getElementById('stepPin').style.display  = 'none';
+  document.getElementById('stepName').style.display = 'block';
+  _selectedAdminId = null;
+  loadNameSelect();
 }
+
+(function checkAdminSession() {
+  try {
+    const saved = localStorage.getItem(ADMIN_SESSION_KEY);
+    if (saved) {
+      const s = JSON.parse(saved);
+      const found = DB.getStaff().find(x => x.id === s.id && x.role === 'admin');
+      if (found) {
+        adminSession = found;
+        setTimeout(() => {
+          document.getElementById('loginWrap').style.display = 'none';
+          document.getElementById('appWrap').style.display = 'flex';
+          initApp();
+        }, 500);
+        return;
+      }
+    }
+  } catch(e) {}
+  loadNameSelect();
+})();
 
 // ── INIT ──────────────────────────
 function initApp() {
@@ -414,11 +487,8 @@ function setTimer() {
 }
 
 function clearTimer() {
-  // Clear from both localStorage and Firebase
   localStorage.removeItem('idp_countdown');
-  if (typeof _db !== 'undefined' && _db) {
-    try { _db.ref('store/idp_countdown').remove(); } catch(e) {}
-  }
+  if (typeof _db !== 'undefined' && _db) { try { _db.ref('store/idp_countdown').remove(); } catch(e) {} }
   showToast('⏹ หยุด Timer แล้ว');
 }
 
@@ -440,22 +510,32 @@ function renderRolesPage() {
     <tr>
       <td style="font-family:var(--font-title);font-size:13px">${s.name}</td>
       <td><span class="role-chip ${s.role}" style="display:inline">${s.role==='admin'?'👑 Admin':'🛠 Staff'}</span></td>
-      <td style="font-family:var(--font-mono);font-size:12px;color:var(--text-shadow)">${'•'.repeat(s.pin.length)}</td>
+      <td style="font-family:var(--font-mono);font-size:12px;color:var(--text-shadow)">${s.pin ? '•'.repeat(s.pin.length) : '<span style="color:#f87171;font-size:11px">ยังไม่ได้ตั้ง PIN</span>'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="resetPin('${s.id}')">Reset PIN</button></td>
       <td><button class="btn btn-danger btn-sm" onclick="removeStaff('${s.id}')" ${s.id==='admin1'?'disabled title="Admin หลักลบไม่ได้"':''}>ลบ</button></td>
     </tr>`).join('');
 }
 
 function addStaff() {
   const name = document.getElementById('staffName').value.trim();
-  const pin  = document.getElementById('staffPin').value.trim();
   const role = document.getElementById('staffRole').value;
-  if (!name || !pin) { showToast('กรอกชื่อและ PIN','error'); return; }
-  if (DB.getStaff().find(s=>s.pin===pin)) { showToast('PIN นี้ถูกใช้แล้ว','error'); return; }
-  DB.addStaff({ name, pin, role });
+  if (!name) { showToast('กรอกชื่อ','error'); return; }
+  if (DB.getStaff().find(s=>s.name===name)) { showToast('ชื่อนี้มีอยู่แล้ว','error'); return; }
+  DB.addStaff({ name, pin: '', role }); // PIN ว่างไว้ให้ตั้งเองครั้งแรก
   document.getElementById('staffName').value = '';
-  document.getElementById('staffPin').value  = '';
   renderRolesPage();
-  showToast(`✦ เพิ่ม ${name} แล้ว`, 'success');
+  showToast(`✦ สร้าง account "${name}" แล้ว — รอพี่สต๊าฟตั้ง PIN ครั้งแรก`, 'success');
+}
+
+function resetPin(id) {
+  const allStaff = DB.getStaff();
+  const idx = allStaff.findIndex(s => s.id === id);
+  if (idx >= 0) {
+    allStaff[idx].pin = '';
+    DB.saveStaff(allStaff);
+    renderRolesPage();
+    showToast('🔄 Reset PIN แล้ว — พี่สต๊าฟจะตั้ง PIN ใหม่ครั้งหน้าที่ login');
+  }
 }
 
 function removeStaff(id) {
@@ -553,16 +633,13 @@ function exportJSON() {
 }
 
 function confirmReset(type) {
-  const titles = { scores:'Reset คะแนนทั้งหมด?', all:'Reset ทั้งหมด?', firebase:'ลบข้อมูลทั้งหมดออกจาก Firebase?' };
-  const subs   = { scores:'ลบคะแนน + submissions ทั้งหมด (ข้อมูลน้องและภารกิจยังอยู่)', all:'ล้างข้อมูลทั้งหมด ไม่สามารถกู้คืนได้!', firebase:'ลบข้อมูลทั้งหมดออกจาก Firebase และ localStorage — ทุกอุปกรณ์จะถูกล้าง!' };
+  const titles = { scores:'Reset คะแนนทั้งหมด?', all:'Reset ทั้งหมด?' };
+  const subs   = { scores:'ลบคะแนน + submissions ทั้งหมด (ข้อมูลน้องและภารกิจยังอยู่)', all:'ล้าง localStorage ทั้งหมด ไม่สามารถกู้คืนได้!' };
   document.getElementById('confirmTitle').textContent = titles[type];
   document.getElementById('confirmSub').textContent   = subs[type];
   document.getElementById('confirmOkBtn').onclick = () => {
     if (type==='scores') DB.resetScoresOnly();
-    else if (type==='firebase') {
-      DB.resetAll();
-      showToast('🗑 ลบข้อมูลทั้งหมดแล้ว', 'error');
-    } else DB.resetAll();
+    else DB.resetAll();
     document.getElementById('confirmModal').classList.remove('open');
     renderSidebar(); renderExportPage();
     showToast(type==='all'?'💣 Reset สมบูรณ์':'🔄 Reset คะแนนแล้ว', type==='all'?'error':'success');

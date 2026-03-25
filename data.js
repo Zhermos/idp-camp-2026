@@ -175,7 +175,7 @@ const DB = {
   getPendingSubmissions() { return this.getSubmissions().filter(s => s.status === 'pending'); },
   getCamperSubmissions(camperId) { return this.getSubmissions().filter(s => s.camperId === camperId); },
   getStaff() { return load(KEYS.staff, DEFAULT_STAFF); },
-  saveStaff(s) { save(KEYS.staff, s); },
+  saveStaff(s) { save(KEYS.staff, s); }, // syncs to Firebase via save()
   addStaff(m) { const s = this.getStaff(); m.id = 'staff' + nextId(); s.push(m); save(KEYS.staff, s); },
   removeStaff(id) { save(KEYS.staff, this.getStaff().filter(s => s.id !== id)); },
   getActivities() { return load(KEYS.activities, []); },
