@@ -64,7 +64,6 @@
           <div class="nav-item"        data-page="scanner"     onclick="navigate('scanner')">    <span class="nav-icon">📷</span><span>Scanner</span></div>
           <div class="nav-item"        data-page="leaderboard" onclick="navigate('leaderboard')"><span class="nav-icon">🏛</span><span>Leaderboard</span></div>
           <div class="nav-item"        data-page="liveboard"   onclick="navigate('liveboard')">  <span class="nav-icon">📺</span><span>Live Board</span></div>
-          <div class="nav-item"        data-page="history"     onclick="navigate('history')">    <span class="nav-icon">📋</span><span>ประวัติงาน</span></div>
         </div>
         <div class="sidebar-divider"></div>
         <div class="sidebar-section"><div class="sidebar-section-label">คะแนนทีม</div></div>
@@ -215,21 +214,6 @@
           </div>
         </div>
 
-        <!-- HISTORY -->
-        <div class="page" id="page-history">
-          <div class="page-header">
-            <h1 class="page-title">📋 ประวัติงานทั้งหมด</h1>
-            <p class="page-subtitle">ดูงานที่ส่งและตรวจแล้วย้อนหลัง</p>
-          </div>
-          <div class="quest-filters" style="margin-bottom:16px">
-            <button class="filter-btn active" onclick="filterHistory('all',this)">ทั้งหมด</button>
-            <button class="filter-btn" onclick="filterHistory('pending',this)">🔵 รอตรวจ</button>
-            <button class="filter-btn" onclick="filterHistory('approved',this)">✅ ผ่านแล้ว</button>
-            <button class="filter-btn" onclick="filterHistory('rejected',this)">❌ ตีกลับ</button>
-          </div>
-          <div id="historyList"></div>
-        </div>
-
         <!-- LIVE BOARD -->
         <div class="page" id="page-liveboard">
           <div class="page-header">
@@ -307,151 +291,25 @@ let scannerCamperId = null;
 let scannerStream = null;
 
 // ── LOGIN ─────────────────────────
-const STAFF_SESSION_KEY = 'idp_staff_session';
-let _selectedStaffId = null;
-let _isFirstLogin = false;
-
-function loadAccountList() {
-  const allStaff = DB.getStaff();
-  const sel = document.getElementById('accountSel');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">— เลือกชื่อของคุณ —</option>' +
-    allStaff.map(s => `<option value="${s.id}">${s.role==='admin'?'👑':'🛠'} ${s.name}</option>`).join('');
-}
-
-function onAccountChange() {}
-
-function proceedLogin() {
-  const sel = document.getElementById('accountSel');
-  const id  = sel?.value;
-  if (!id) { showToast('กรุณาเลือก account', 'error'); return; }
-  const allStaff = DB.getStaff();
-  const staff = allStaff.find(s => s.id === id);
-  if (!staff) { showToast('ไม่พบ account', 'error'); return; }
-  _selectedStaffId = id;
-  _isFirstLogin = !staff.pin;
-  document.getElementById('stepAccount').style.display = 'none';
-  document.getElementById('stepPin').style.display = 'block';
-  if (_isFirstLogin) {
-    document.getElementById('pinLabel').textContent = 'ตั้ง PIN ใหม่ (ครั้งแรก)';
-    document.getElementById('confirmPinWrap').style.display = 'block';
-  } else {
-    document.getElementById('pinLabel').textContent = 'Staff PIN';
-    document.getElementById('confirmPinWrap').style.display = 'none';
-  }
-  document.getElementById('pinInput').focus();
-}
-
-function backToAccount() {
-  _selectedStaffId = null;
-  _isFirstLogin = false;
-  document.getElementById('stepAccount').style.display = 'block';
-  document.getElementById('stepPin').style.display = 'none';
-  document.getElementById('pinInput').value = '';
-  document.getElementById('pinConfirm') && (document.getElementById('pinConfirm').value = '');
-}
-let _selectedStaffId = null;
-
-function loadNameSelect() {
-  const sel = document.getElementById('nameSelect');
-  const allStaff = DB.getStaff();
-  sel.innerHTML = '<option value="">— เลือกชื่อ —</option>' +
-    allStaff.filter(s => s.role === 'staff' || s.role === 'admin')
-            .map(s => `<option value="${s.id}">${s.name} ${s.role==='admin'?'👑':''}</option>`).join('');
-}
-
-function onNameSelect() {
-  _selectedStaffId = document.getElementById('nameSelect').value;
-}
-
-function proceedToPin() {
-  _selectedStaffId = document.getElementById('nameSelect').value;
-  if (!_selectedStaffId) { showToast('กรุณาเลือกชื่อ', 'error'); return; }
-  const staff = DB.getStaff().find(s => s.id === _selectedStaffId);
-  if (!staff) { showToast('ไม่พบข้อมูล', 'error'); return; }
-  document.getElementById('stepName').style.display = 'none';
-  document.getElementById('stepPin').style.display  = 'block';
-  document.getElementById('staffWelcomeMsg').textContent = 'สวัสดี ' + staff.name;
-  const isFirstTime = !staff.pin || staff.pin === '';
-  if (isFirstTime) {
-    document.getElementById('pinLabel').textContent = 'ตั้ง PIN ของคุณ (ครั้งแรก)';
-    document.getElementById('pinConfirmWrap').style.display = 'block';
-  } else {
-    document.getElementById('pinLabel').textContent = 'กรอก PIN';
-    document.getElementById('pinConfirmWrap').style.display = 'none';
-  }
-  document.getElementById('pinInput').value = '';
-  document.getElementById('pinInput').focus();
-}
-
-function backToName() {
-  document.getElementById('stepPin').style.display  = 'none';
-  document.getElementById('stepName').style.display = 'block';
-  _selectedStaffId = null;
-}
-
 function staffLogin() {
-  if (!_selectedStaffId) { backToName(); return; }
-  const allStaff = DB.getStaff();
-  const staff = allStaff.find(s => s.id === _selectedStaffId);
-  if (!staff) { showToast('ไม่พบข้อมูล', 'error'); return; }
-  const pin = document.getElementById('pinInput').value.trim();
-  if (!pin) { showToast('กรุณากรอก PIN', 'error'); return; }
-  const isFirstTime = !staff.pin || staff.pin === '';
-  if (isFirstTime) {
-    const confirm = document.getElementById('pinConfirm').value.trim();
-    if (pin !== confirm) { showToast('PIN ไม่ตรงกัน', 'error'); return; }
-    if (pin.length < 4)  { showToast('PIN ต้องมีอย่างน้อย 4 ตัว', 'error'); return; }
-    // Save new PIN
-    const idx = allStaff.findIndex(s => s.id === _selectedStaffId);
-    allStaff[idx].pin = pin;
-    DB.saveStaff(allStaff);
-    showToast('✅ ตั้ง PIN เรียบร้อย!', 'success');
-  } else {
-    if (staff.pin !== pin) { showToast('PIN ไม่ถูกต้อง', 'error'); return; }
-  }
-  staffSession = allStaff.find(s => s.id === _selectedStaffId);
-  // Persist session
-  try { localStorage.setItem(STAFF_SESSION_KEY, JSON.stringify({ id: staffSession.id, name: staffSession.name, role: staffSession.role })); } catch(e) {}
-  enterApp();
-}
-
-function enterApp() {
+  const pin  = document.getElementById('pinInput').value.trim();
+  const staff = DB.getStaff().find(s => s.pin === pin);
+  if (!staff) { showToast('PIN ไม่ถูกต้อง', 'error'); return; }
+  staffSession = staff;
   document.getElementById('loginWrap').style.display  = 'none';
-  document.getElementById('appWrap').style.display    = 'flex';
-  document.getElementById('staffNameChip').textContent = staffSession.name + (staffSession.role==='admin'?' 👑':'');
+  const appWrap = document.getElementById('appWrap');
+  appWrap.style.display    = 'flex';
+  document.getElementById('staffNameChip').textContent = staff.name;
   initApp();
 }
 
 function logout() {
   staffSession = null;
-  try { localStorage.removeItem(STAFF_SESSION_KEY); } catch(e) {}
   document.getElementById('appWrap').style.display  = 'none';
   document.getElementById('loginWrap').style.display = 'flex';
   document.getElementById('loginWrap').style.flexDirection = 'column';
-  document.getElementById('stepPin').style.display  = 'none';
-  document.getElementById('stepName').style.display = 'block';
-  _selectedStaffId = null;
-  loadNameSelect();
+  document.getElementById('pinInput').value = '';
 }
-
-// Check persisted session on load
-(function checkStaffSession() {
-  try {
-    const saved = localStorage.getItem(STAFF_SESSION_KEY);
-    if (saved) {
-      const s = JSON.parse(saved);
-      const allStaff = DB.getStaff();
-      const found = allStaff.find(x => x.id === s.id);
-      if (found) {
-        staffSession = found;
-        setTimeout(() => { enterApp(); }, 500); // wait for Firebase sync
-        return;
-      }
-    }
-  } catch(e) {}
-  loadNameSelect();
-})();
 
 // ── INIT ──────────────────────────
 function initApp() {
@@ -487,7 +345,6 @@ function navigate(page) {
     points: renderPointsPage,
     leaderboard: renderLeaderboard,
     liveboard: renderLiveboard,
-    history: renderHistory,
   };
   if (map[page]) map[page]();
 }
@@ -518,9 +375,16 @@ function renderReviewQueue() {
         </div>
         ${s.fileUrl
           ? s.fileType === 'video'
-            ? `<div class="review-media" style="height:auto;padding:0;overflow:hidden;border-radius:var(--r-lg)"><video src="${s.fileUrl}" controls style="width:100%;max-height:280px;border-radius:var(--r-lg);background:#000"></video></div>`
-            : `<div class="review-media" style="height:auto;padding:0;overflow:hidden;border-radius:var(--r-lg);cursor:pointer" onclick="window.open('${s.fileUrl}','_blank')"><img src="${s.fileUrl}" style="width:100%;max-height:280px;object-fit:contain;background:#111;border-radius:var(--r-lg)"></div>`
-          : `<div class="review-media"><span style="font-size:28px">📝</span><span>ไม่มีไฟล์แนบ</span></div>`
+            ? `<div class="review-media" style="height:auto;padding:0;overflow:hidden;border-radius:var(--r-lg)">
+                <video src="${s.fileUrl}" controls style="width:100%;max-height:300px;border-radius:var(--r-lg);background:#000"></video>
+               </div>`
+            : `<div class="review-media" style="height:auto;padding:0;overflow:hidden;border-radius:var(--r-lg);cursor:pointer" onclick="window.open('${s.fileUrl}','_blank')">
+                <img src="${s.fileUrl}" style="width:100%;max-height:300px;object-fit:contain;background:#111;border-radius:var(--r-lg)">
+               </div>`
+          : `<div class="review-media">
+              <span style="font-size:28px">📝</span>
+              <span>ไม่มีไฟล์แนบ</span>
+             </div>`
         }
         ${s.desc ? `<div class="review-desc">"${s.desc}"</div>` : ''}
         <div class="review-actions">
@@ -754,52 +618,6 @@ function stopScanner() {
   document.getElementById('scannerVideo').style.display = 'none';
   document.getElementById('startScanBtn').style.display = 'inline-flex';
   document.getElementById('stopScanBtn').style.display  = 'none';
-}
-
-// ── HISTORY ───────────────────────
-let _historyFilter = 'all';
-function filterHistory(f, btn) {
-  _historyFilter = f;
-  document.querySelectorAll('#page-history .filter-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  renderHistory();
-}
-function renderHistory() {
-  let subs = DB.getSubmissions();
-  if (_historyFilter !== 'all') subs = subs.filter(s => s.status === _historyFilter);
-  const icon  = {pending:'🔵', approved:'✅', rejected:'❌'};
-  const label = {pending:'รอตรวจ', approved:'ผ่านแล้ว', rejected:'ตีกลับ'};
-  if (!subs.length) {
-    document.getElementById('historyList').innerHTML = '<div style="text-align:center;color:var(--text-shadow);padding:40px">ไม่มีงาน</div>';
-    return;
-  }
-  document.getElementById('historyList').innerHTML = subs.map(s => {
-    const camper = DB.getCamper(s.camperId);
-    const team   = DB.getTeam(s.teamId);
-    let mediaHtml = '';
-    if (s.fileUrl) {
-      mediaHtml = s.fileType === 'video'
-        ? `<video src="${s.fileUrl}" controls style="width:100%;max-height:220px;border-radius:var(--r-lg);background:#000;margin:8px 0"></video>`
-        : `<img src="${s.fileUrl}" style="width:100%;max-height:220px;object-fit:contain;border-radius:var(--r-lg);background:#111;margin:8px 0;cursor:pointer" onclick="window.open('${s.fileUrl}','_blank')">`;
-    }
-    return `<div class="review-item" style="margin-bottom:10px">
-      <div class="review-header">
-        <div class="review-avatar" style="background:${team?.color||'#333'}18;color:${team?.color||'#aaa'};border-color:${team?.color||'#555'}40">${camper?.name?.charAt(0)||'?'}</div>
-        <div class="review-info">
-          <div class="review-submitter">${camper?.name||'?'} <span style="color:${team?.color};font-size:12px">${team?.name||''}</span></div>
-          <div class="review-quest">📌 ${s.questName}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-          <span style="font-size:18px">${icon[s.status]}</span>
-          <span style="font-size:11px;color:var(--text-shadow)">${label[s.status]}</span>
-          ${s.status==='approved'?`<span style="font-family:var(--font-mono);font-size:12px;color:var(--magic-green)">+${s.points}pt</span>`:''}
-        </div>
-      </div>
-      ${mediaHtml}
-      ${s.desc?`<div class="review-desc">"${s.desc}"</div>`:''}
-      ${s.rejectReason?`<div style="font-size:12px;color:#f87171;padding:6px 0">💬 ${s.rejectReason}</div>`:''}
-    </div>`;
-  }).join('');
 }
 
 // ── LEADERBOARD / LIVEBOARD ───────

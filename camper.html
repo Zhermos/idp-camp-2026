@@ -419,25 +419,36 @@ function submitWork() {
   const team = DB.getTeam(session.teamId);
   const file = document.getElementById('fileInput').files?.[0];
   const desc = document.getElementById('submissionDesc').value;
+
+  // Create submission first
   const sub = DB.addSubmission({
-    questId: q.id, questName: q.name, questPoints: q.points,
-    camperId: session.camperId, camperName: session.name, teamId: session.teamId,
-    desc, hasFile: !!file, fileUrl: null, fileType: null,
+    questId:     q.id,
+    questName:   q.name,
+    questPoints: q.points,
+    camperId:    session.camperId,
+    camperName:  session.name,
+    teamId:      session.teamId,
+    desc:        desc,
+    hasFile:     !!file,
+    fileUrl:     null,
+    fileType:    null,
   });
+
   closeModal();
   renderQuestGrid();
   renderSidebar();
+
   if (file) {
     showToast('⏫ กำลังอัปโหลดไฟล์...', '');
     DB.uploadFile(file,
-      (pct) => showToast(`⏫ อัปโหลด ${pct}%`, ''),
-      (url, type) => {
-        DB.updateSubmission(sub.id, { fileUrl: url, fileType: type });
+      (pct) => { showToast(`⏫ อัปโหลด ${pct}%`, ''); },
+      (url, resourceType) => {
+        DB.updateSubmission(sub.id, { fileUrl: url, fileType: resourceType });
         DB.pushActivity(`${team.icon} <b style="color:${team.color}">${session.name}</b> ส่งหลักฐาน "${q.name}"`);
         renderActivity();
         showToast('📜 ส่งงานเรียบร้อย! รอพี่สต๊าฟตรวจ 🙏', 'success');
       },
-      () => {
+      (err) => {
         DB.pushActivity(`${team.icon} <b style="color:${team.color}">${session.name}</b> ส่งหลักฐาน "${q.name}" (ไม่มีไฟล์)`);
         renderActivity();
         showToast('⚠️ อัปโหลดไฟล์ไม่สำเร็จ แต่ส่งงานแล้ว', 'error');
