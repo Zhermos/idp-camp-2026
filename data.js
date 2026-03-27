@@ -28,10 +28,11 @@ try {
 } catch(e) { console.warn('Firebase init failed:', e); }
 
 const DEFAULT_TEAMS = [
-  { id:'red',    name:'ทีมฮาเดส',    color:'#c0392b', score:0, icon:'🔴', deity:'Hades',    members:[] },
-  { id:'green',  name:'ทีมอธีนา',    color:'#27ae60', score:0, icon:'🟢', deity:'Athena',   members:[] },
-  { id:'yellow', name:'ทีมอะพอลโล',  color:'#d4a017', score:0, icon:'🟡', deity:'Apollo',   members:[] },
-  { id:'blue',   name:'ทีมโพไซดอน',  color:'#2980b9', score:0, icon:'🔵', deity:'Poseidon', members:[] },
+  { id:'red',    name:'Moira Conclave',    color:'#c0392b', score:0, icon:'🔴', deity:'Hades',    members:[] },
+  { id:'green',  name:'Ares Exiles',    color:'#27ae60', score:0, icon:'🟢', deity:'Athena',   members:[] },
+  { id:'yellow', name:'Promethean Arcanum',  color:'#d4a017', score:0, icon:'🟡', deity:'Apollo',   members:[] },
+  { id:'blue',   name:'Hubris Order',  color:'#2980b9', score:0, icon:'🔵', deity:'Poseidon', members:[] },
+  { id:'purple',   name:'Hermesian Veil',  color:'#9729b9', score:0, icon:'🟣', deity:'Poseidon', members:[] },
 ];
 
 const DEFAULT_QUESTS = [
