@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TARTARUS — Admin</title>
 <link rel="stylesheet" href="style.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="data.js"></script>
 </head>
 <body>
 <div class="app-shell">
@@ -309,10 +313,6 @@
 
 <div class="toast-container" id="toastContainer"></div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="data.js"></script>
 <script>
 // ── GOOGLE LOGIN ───────────────────
 async function adminLogin() {
@@ -529,9 +529,9 @@ async function removeWhitelist(email, role) {
 // ── TEAMS ──────────────────────────
 function renderTeamsPage() {
   const teams = DB.getTeams();
-  const campers = DB.getCampers();
+  const allCampers = DB.getCampers();
   document.getElementById('teamSettingsGrid').innerHTML = teams.map(t=>{
-    const count = campers.filter(c=>c.teamId===t.id).length;
+    const count = allCampers.filter(c=>c.teamId===t.id).length;
     const max = t.maxMembers || '∞';
     return `
     <div style="display:flex;align-items:center;gap:12px;background:var(--bg-block);padding:12px 16px;border-radius:var(--r-lg);border:1px solid var(--border-iron)">
@@ -549,7 +549,7 @@ function renderTeamsPage() {
     </div>`}).join('');
 
   // Members table
-  const campersSorted = DB.getCampers().sort((a,b)=>(b.score||0)-(a.score||0));
+  const campersSorted = allCampers.slice().sort((a,b)=>(b.score||0)-(a.score||0));
   const subs = DB.getSubmissions();
   document.getElementById('allMembersBody').innerHTML = campersSorted.map(c=>{
     const team = teams.find(t=>t.id===c.teamId);
