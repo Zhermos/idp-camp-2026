@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TARTARUS — Admin</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="data.js"></script>
 </head>
 <body>
 <div class="app-shell">
@@ -313,19 +309,40 @@
 
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="data.js"></script>
 <script>
 // ── GOOGLE LOGIN ───────────────────
 async function adminLogin() {
   const btn = document.getElementById('googleLoginBtn');
   const status = document.getElementById('loginStatus');
   btn.disabled = true;
-  status.textContent = 'กำลัง redirect ไป Google...';
+  status.textContent = 'กำลังเชื่อมต่อ Google...';
   status.style.color = 'var(--text-shadow)';
   try {
-    await AUTH.signInWithGoogle(); // redirect — page will reload
+    const result = await AUTH.signInWithGoogle();
+    const user = result.user;
+    status.textContent = 'กำลังตรวจสอบสิทธิ์ Admin...';
+    const ok = await AUTH.isAdmin(user.email);
+    if (!ok) {
+      status.style.color = '#e57373';
+      status.textContent = '❌ ' + user.email + ' ไม่มีสิทธิ์ Admin';
+      await AUTH.signOut();
+      btn.disabled = false;
+      return;
+    }
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('appWrap').style.display = 'flex';
+    initApp();
   } catch(e) {
-    status.style.color = '#e57373';
-    status.textContent = '❌ เกิดข้อผิดพลาด: ' + (e.message || e);
+    if (e.code === 'auth/popup-closed-by-user') {
+      status.textContent = '';
+    } else {
+      status.style.color = '#e57373';
+      status.textContent = '❌ เกิดข้อผิดพลาด: ' + (e.message || e);
+    }
     btn.disabled = false;
   }
 }
@@ -512,29 +529,18 @@ async function removeWhitelist(email, role) {
 // ── TEAMS ──────────────────────────
 function renderTeamsPage() {
   const teams = DB.getTeams();
-  const allCampers = DB.getCampers();
-  document.getElementById('teamSettingsGrid').innerHTML = teams.map(t=>{
-    const count = allCampers.filter(c=>c.teamId===t.id).length;
-    const max = t.maxMembers || '∞';
-    return `
+  document.getElementById('teamSettingsGrid').innerHTML = teams.map(t=>`
     <div style="display:flex;align-items:center;gap:12px;background:var(--bg-block);padding:12px 16px;border-radius:var(--r-lg);border:1px solid var(--border-iron)">
       <input type="text" value="${t.icon}" id="ticon-${t.id}" style="width:40px;text-align:center;font-size:20px;background:var(--bg-input);border:1px solid var(--border-iron);border-radius:var(--r-sm);padding:4px;color:var(--text-parchment)">
       <input type="text" value="${t.name}" id="tname-${t.id}" class="form-input" style="flex:1">
       <input type="color" value="${t.color}" id="tcolor-${t.id}" style="width:40px;height:36px;border:none;background:transparent;cursor:pointer">
-      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-        <span style="font-size:11px;color:var(--text-shadow)">จำกัด</span>
-        <input type="number" value="${t.maxMembers||''}" id="tmax-${t.id}" min="1" max="999" placeholder="∞"
-          style="width:60px;text-align:center;background:var(--bg-input);border:1px solid var(--border-iron);border-radius:var(--r-sm);padding:4px 6px;color:var(--text-parchment);font-family:var(--font-mono);font-size:13px">
-        <span style="font-size:11px;color:var(--text-shadow)">คน</span>
-      </div>
-      <span style="font-family:var(--font-mono);font-size:12px;color:${t.maxMembers&&count>=t.maxMembers?'#f87171':'var(--magic-green)'};min-width:60px;text-align:center">${count}/${max}</span>
       <span style="font-family:var(--font-mono);font-size:13px;color:var(--gold);min-width:70px;text-align:right">${t.score.toLocaleString()} pt</span>
-    </div>`}).join('');
+    </div>`).join('');
 
   // Members table
-  const campersSorted = allCampers.slice().sort((a,b)=>(b.score||0)-(a.score||0));
+  const campers = DB.getCampers().sort((a,b)=>(b.score||0)-(a.score||0));
   const subs = DB.getSubmissions();
-  document.getElementById('allMembersBody').innerHTML = campersSorted.map(c=>{
+  document.getElementById('allMembersBody').innerHTML = campers.map(c=>{
     const team = teams.find(t=>t.id===c.teamId);
     const done = subs.filter(s=>s.camperId===c.id&&s.status==='approved').length;
     return `<tr>
@@ -547,19 +553,14 @@ function renderTeamsPage() {
 }
 
 function saveTeams() {
-  const teams = DB.getTeams().map(t=>{
-    const maxVal = document.getElementById('tmax-'+t.id)?.value;
-    return {
-      ...t,
-      icon:       document.getElementById('ticon-'+t.id)?.value || t.icon,
-      name:       document.getElementById('tname-'+t.id)?.value || t.name,
-      color:      document.getElementById('tcolor-'+t.id)?.value || t.color,
-      maxMembers: maxVal ? parseInt(maxVal) : null,
-    };
-  });
+  const teams = DB.getTeams().map(t=>({
+    ...t,
+    icon:  document.getElementById('ticon-'+t.id)?.value || t.icon,
+    name:  document.getElementById('tname-'+t.id)?.value || t.name,
+    color: document.getElementById('tcolor-'+t.id)?.value || t.color,
+  }));
   DB.saveTeams(teams);
   renderSidebar();
-  renderTeamsPage();
   showToast('💾 บันทึกทีมแล้ว', 'success');
 }
 
