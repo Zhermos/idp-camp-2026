@@ -285,16 +285,11 @@ async function registerCamper() {
   const btn = document.getElementById('googleRegisterBtn');
   const status = document.getElementById('registerStatus');
   if (btn) btn.disabled = true;
-  if (status) { status.textContent = 'กำลังเชื่อมต่อ Google...'; status.style.color = 'var(--text-shadow)'; }
+  if (status) { status.textContent = 'กำลัง redirect ไป Google...'; status.style.color = 'var(--text-shadow)'; }
   try {
-    await AUTH.signInWithGoogle();
-    // onAuthStateChanged will handle the rest
+    await AUTH.signInWithGoogle(); // redirect — page will reload
   } catch(e) {
-    if (e.code !== 'auth/popup-closed-by-user') {
-      if (status) { status.style.color = '#e57373'; status.textContent = '❌ ' + (e.message || 'เกิดข้อผิดพลาด'); }
-    } else {
-      if (status) status.textContent = '';
-    }
+    if (status) { status.style.color = '#e57373'; status.textContent = '❌ ' + (e.message || 'เกิดข้อผิดพลาด'); }
     if (btn) btn.disabled = false;
   }
 }

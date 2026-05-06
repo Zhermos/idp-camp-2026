@@ -30,12 +30,18 @@ try {
 
 // ── Google Auth helpers ────────────────────────────────
 const AUTH = {
-  // Sign in with Google popup
+  // Sign in with Google (redirect — works on GitHub Pages)
   signInWithGoogle() {
     if (!_auth) return Promise.reject('Firebase not ready');
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    return _auth.signInWithPopup(provider);
+    return _auth.signInWithRedirect(provider);
+  },
+
+  // Call on page load to get redirect result
+  getRedirectResult() {
+    if (!_auth) return Promise.resolve(null);
+    return _auth.getRedirectResult();
   },
 
   // Sign out

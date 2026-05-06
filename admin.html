@@ -319,30 +319,13 @@ async function adminLogin() {
   const btn = document.getElementById('googleLoginBtn');
   const status = document.getElementById('loginStatus');
   btn.disabled = true;
-  status.textContent = 'กำลังเชื่อมต่อ Google...';
+  status.textContent = 'กำลัง redirect ไป Google...';
   status.style.color = 'var(--text-shadow)';
   try {
-    const result = await AUTH.signInWithGoogle();
-    const user = result.user;
-    status.textContent = 'กำลังตรวจสอบสิทธิ์ Admin...';
-    const ok = await AUTH.isAdmin(user.email);
-    if (!ok) {
-      status.style.color = '#e57373';
-      status.textContent = '❌ ' + user.email + ' ไม่มีสิทธิ์ Admin';
-      await AUTH.signOut();
-      btn.disabled = false;
-      return;
-    }
-    document.getElementById('loginWrap').style.display = 'none';
-    document.getElementById('appWrap').style.display = 'flex';
-    initApp();
+    await AUTH.signInWithGoogle(); // redirect — page will reload
   } catch(e) {
-    if (e.code === 'auth/popup-closed-by-user') {
-      status.textContent = '';
-    } else {
-      status.style.color = '#e57373';
-      status.textContent = '❌ เกิดข้อผิดพลาด: ' + (e.message || e);
-    }
+    status.style.color = '#e57373';
+    status.textContent = '❌ เกิดข้อผิดพลาด: ' + (e.message || e);
     btn.disabled = false;
   }
 }
