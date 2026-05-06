@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TARTARUS — Admin</title>
 <link rel="stylesheet" href="style.css">
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
 <div class="app-shell">
@@ -18,13 +16,12 @@
         <div class="login-rune">👑</div>
         <div class="login-logo">ADMIN</div>
         <div class="login-sub">TARTARUS CAMP · CONTROL</div>
-        <div class="form-group mt-16">
-          <label class="form-label">Admin PIN</label>
-          <input class="form-input" id="pinInput" type="password" placeholder="กรอก PIN..." maxlength="10"
-                 onkeydown="if(event.key==='Enter') adminLogin()">
-        </div>
-        <button class="btn btn-primary btn-full mt-8" onclick="adminLogin()">🔓 เข้าสู่ระบบ</button>
-        <div style="margin-top:16px;text-align:center;font-size:11px;color:var(--text-shadow)">PIN เริ่มต้น: 9999</div>
+        <div id="loginStatus" style="text-align:center;font-size:13px;color:var(--text-shadow);margin:16px 0;min-height:20px;"></div>
+        <button class="btn btn-primary btn-full mt-8" id="googleLoginBtn" onclick="adminLogin()">
+          <svg width="18" height="18" viewBox="0 0 48 48" style="vertical-align:middle;margin-right:8px"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.5 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.6l6.2 5.2C36.9 36.2 44 30.9 44 24c0-1.3-.1-2.7-.4-3.9z"/></svg>
+          Sign in with Google
+        </button>
+        <div style="margin-top:16px;text-align:center;font-size:11px;color:var(--text-shadow)">เฉพาะ Admin email เท่านั้น</div>
       </div>
     </div>
   </div>
@@ -165,36 +162,51 @@
         <div class="page" id="page-roles">
           <div class="page-header">
             <h1 class="page-title">🛡 Role Management</h1>
-            <p class="page-subtitle">จัดการพี่สต๊าฟและสิทธิ์การเข้าถึง</p>
+            <p class="page-subtitle">จัดการสิทธิ์เข้าถึงด้วย Google Email Whitelist</p>
           </div>
+
+          <!-- Add Staff -->
           <div class="card">
-            <div class="card-header"><span class="card-title">✦ เพิ่มสต๊าฟใหม่</span></div>
+            <div class="card-header"><span class="card-title">✦ เพิ่ม Staff Email</span></div>
             <div class="card-body">
               <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">ชื่อ</label>
-                  <input class="form-input" id="staffName" placeholder="ชื่อพี่สต๊าฟ">
+                <div class="form-group" style="flex:2">
+                  <label class="form-label">Google Email</label>
+                  <input class="form-input" id="staffEmail" placeholder="example@gmail.com" type="email">
                 </div>
-                <div class="form-group">
-                  <label class="form-label">PIN</label>
-                  <input class="form-input" id="staffPin" type="password" placeholder="PIN 4 ตัว" maxlength="10">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Role</label>
-                  <select class="form-select" id="staffRole">
-                    <option value="staff">🛠 Staff</option>
-                    <option value="admin">👑 Admin</option>
-                  </select>
+                <div class="form-group" style="flex:1">
+                  <label class="form-label">ชื่อ (ไว้อ้างอิง)</label>
+                  <input class="form-input" id="staffEmailName" placeholder="พี่เอ็ม">
                 </div>
               </div>
-              <button class="btn btn-primary" onclick="addStaff()">✦ เพิ่มสต๊าฟ</button>
+              <button class="btn btn-primary" onclick="addStaffEmail()">✦ เพิ่ม Staff</button>
             </div>
           </div>
+
+          <!-- Add Admin -->
           <div class="card mt-16">
-            <div class="card-header"><span class="card-title">📋 รายชื่อสต๊าฟ</span></div>
+            <div class="card-header"><span class="card-title">👑 เพิ่ม Admin Email</span></div>
+            <div class="card-body">
+              <div class="form-row">
+                <div class="form-group" style="flex:2">
+                  <label class="form-label">Google Email</label>
+                  <input class="form-input" id="adminEmail" placeholder="example@gmail.com" type="email">
+                </div>
+                <div class="form-group" style="flex:1">
+                  <label class="form-label">ชื่อ (ไว้อ้างอิง)</label>
+                  <input class="form-input" id="adminEmailName" placeholder="Admin">
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="addAdminEmail()">👑 เพิ่ม Admin</button>
+            </div>
+          </div>
+
+          <!-- Staff Whitelist -->
+          <div class="card mt-16">
+            <div class="card-header"><span class="card-title">📋 Staff Whitelist</span></div>
             <div class="card-body" style="padding:0">
               <table class="data-table">
-                <thead><tr><th>ชื่อ</th><th>Role</th><th>PIN</th><th></th></tr></thead>
+                <thead><tr><th>Email</th><th>ชื่อ</th><th>Role</th><th></th></tr></thead>
                 <tbody id="staffTable"></tbody>
               </table>
             </div>
@@ -246,7 +258,6 @@
               <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
                 <button class="btn btn-danger btn-full" onclick="confirmReset('scores')">🔄 Reset คะแนน (คงน้องไว้)</button>
                 <button class="btn btn-danger btn-full" onclick="confirmReset('all')" style="background:rgba(192,57,43,.2)">💣 Reset ทั้งหมด (ล้างสมบูรณ์)</button>
-                <button class="btn btn-danger btn-full" onclick="confirmReset('firebase')" style="background:rgba(139,0,0,.3);margin-top:4px">🗑 ลบข้อมูลทั้งหมดออกจาก Firebase</button>
                 <div style="font-size:11px;color:var(--text-shadow);line-height:1.6">Reset คะแนน: ล้างคะแนน + submissions ทั้งหมด แต่คงน้องและภารกิจไว้<br>Reset ทั้งหมด: ล้าง localStorage ทั้งหมด (ไม่สามารถกู้คืนได้)</div>
               </div>
             </div>
@@ -298,25 +309,64 @@
 
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="data.js"></script>
 <script>
-// ── LOGIN ─────────────────────────
-function adminLogin() {
-  const pin  = document.getElementById('pinInput').value.trim();
-  const staff = DB.getStaff().find(s => s.pin === pin && s.role === 'admin');
-  if (!staff) { showToast('PIN ไม่ถูกต้องหรือไม่มีสิทธิ์ Admin', 'error'); return; }
-  document.getElementById('loginWrap').style.display = 'none';
-  const appWrap = document.getElementById('appWrap');
-  appWrap.style.display = 'flex';
-  initApp();
+// ── GOOGLE LOGIN ───────────────────
+async function adminLogin() {
+  const btn = document.getElementById('googleLoginBtn');
+  const status = document.getElementById('loginStatus');
+  btn.disabled = true;
+  status.textContent = 'กำลังเชื่อมต่อ Google...';
+  status.style.color = 'var(--text-shadow)';
+  try {
+    const result = await AUTH.signInWithGoogle();
+    const user = result.user;
+    status.textContent = 'กำลังตรวจสอบสิทธิ์ Admin...';
+    const ok = await AUTH.isAdmin(user.email);
+    if (!ok) {
+      status.style.color = '#e57373';
+      status.textContent = '❌ ' + user.email + ' ไม่มีสิทธิ์ Admin';
+      await AUTH.signOut();
+      btn.disabled = false;
+      return;
+    }
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('appWrap').style.display = 'flex';
+    initApp();
+  } catch(e) {
+    if (e.code === 'auth/popup-closed-by-user') {
+      status.textContent = '';
+    } else {
+      status.style.color = '#e57373';
+      status.textContent = '❌ เกิดข้อผิดพลาด: ' + (e.message || e);
+    }
+    btn.disabled = false;
+  }
 }
 
-function logout() {
+async function logout() {
+  await AUTH.signOut();
   document.getElementById('appWrap').style.display  = 'none';
   document.getElementById('loginWrap').style.display = 'flex';
   document.getElementById('loginWrap').style.flexDirection = 'column';
-  document.getElementById('pinInput').value = '';
+  document.getElementById('loginStatus').textContent = '';
+  document.getElementById('googleLoginBtn').disabled = false;
 }
+
+// Auto-restore session if already signed in
+AUTH.onAuthStateChanged && AUTH.onAuthStateChanged(async user => {
+  if (user) {
+    const ok = await AUTH.isAdmin(user.email);
+    if (ok) {
+      document.getElementById('loginWrap').style.display = 'none';
+      document.getElementById('appWrap').style.display = 'flex';
+      initApp();
+    }
+  }
+});
 
 // ── INIT ──────────────────────────
 function initApp() {
@@ -414,11 +464,7 @@ function setTimer() {
 }
 
 function clearTimer() {
-  // Clear from both localStorage and Firebase
-  localStorage.removeItem('idp_countdown');
-  if (typeof _db !== 'undefined' && _db) {
-    try { _db.ref('store/idp_countdown').remove(); } catch(e) {}
-  }
+  localStorage.removeItem('tq_countdown');
   showToast('⏹ หยุด Timer แล้ว');
 }
 
@@ -434,34 +480,50 @@ function startTimerPreview() {
 }
 
 // ── ROLES ──────────────────────────
-function renderRolesPage() {
-  const staff = DB.getStaff();
-  document.getElementById('staffTable').innerHTML = staff.map(s=>`
+async function renderRolesPage() {
+  const [staffList, adminList] = await Promise.all([AUTH.getStaffWhitelist(), AUTH.getAdminWhitelist()]);
+  const all = [
+    ...staffList.map(s => ({ ...s, role: 'staff' })),
+    ...adminList.map(s => ({ ...s, role: 'admin' })),
+  ];
+  document.getElementById('staffTable').innerHTML = all.length ? all.map(s => `
     <tr>
-      <td style="font-family:var(--font-title);font-size:13px">${s.name}</td>
-      <td><span class="role-chip ${s.role}" style="display:inline">${s.role==='admin'?'👑 Admin':'🛠 Staff'}</span></td>
-      <td style="font-family:var(--font-mono);font-size:12px;color:var(--text-shadow)">${'•'.repeat(s.pin.length)}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="removeStaff('${s.id}')" ${s.id==='admin1'?'disabled title="Admin หลักลบไม่ได้"':''}>ลบ</button></td>
-    </tr>`).join('');
+      <td style="font-family:var(--font-mono);font-size:12px">${s.email}</td>
+      <td style="font-family:var(--font-title);font-size:13px">${s.name || '-'}</td>
+      <td><span class="role-chip ${s.role}" style="display:inline">${s.role === 'admin' ? '👑 Admin' : '🛠 Staff'}</span></td>
+      <td><button class="btn btn-danger btn-sm" onclick="removeWhitelist('${s.email}','${s.role}')">ลบ</button></td>
+    </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-shadow);padding:20px">ยังไม่มีรายชื่อ</td></tr>';
 }
 
-function addStaff() {
-  const name = document.getElementById('staffName').value.trim();
-  const pin  = document.getElementById('staffPin').value.trim();
-  const role = document.getElementById('staffRole').value;
-  if (!name || !pin) { showToast('กรอกชื่อและ PIN','error'); return; }
-  if (DB.getStaff().find(s=>s.pin===pin)) { showToast('PIN นี้ถูกใช้แล้ว','error'); return; }
-  DB.addStaff({ name, pin, role });
-  document.getElementById('staffName').value = '';
-  document.getElementById('staffPin').value  = '';
+async function addStaffEmail() {
+  const email = document.getElementById('staffEmail').value.trim().toLowerCase();
+  const name  = document.getElementById('staffEmailName').value.trim();
+  if (!email) { showToast('กรอก Email ก่อน', 'error'); return; }
+  await AUTH.addStaffEmail(email, name || email);
+  document.getElementById('staffEmail').value = '';
+  document.getElementById('staffEmailName').value = '';
   renderRolesPage();
-  showToast(`✦ เพิ่ม ${name} แล้ว`, 'success');
+  showToast(`✦ เพิ่ม ${email} เป็น Staff แล้ว`, 'success');
 }
 
-function removeStaff(id) {
-  DB.removeStaff(id);
+async function addAdminEmail() {
+  const email = document.getElementById('adminEmail').value.trim().toLowerCase();
+  const name  = document.getElementById('adminEmailName').value.trim();
+  if (!email) { showToast('กรอก Email ก่อน', 'error'); return; }
+  await AUTH.addAdminEmail(email, name || email);
+  // Also add as staff so admin can use staff portal too
+  await AUTH.addStaffEmail(email, name || email);
+  document.getElementById('adminEmail').value = '';
+  document.getElementById('adminEmailName').value = '';
   renderRolesPage();
-  showToast('ลบสต๊าฟแล้ว');
+  showToast(`👑 เพิ่ม ${email} เป็น Admin แล้ว`, 'success');
+}
+
+async function removeWhitelist(email, role) {
+  if (role === 'admin') await AUTH.removeAdminEmail(email);
+  await AUTH.removeStaffEmail(email);
+  renderRolesPage();
+  showToast('ลบออกแล้ว');
 }
 
 // ── TEAMS ──────────────────────────
@@ -553,16 +615,13 @@ function exportJSON() {
 }
 
 function confirmReset(type) {
-  const titles = { scores:'Reset คะแนนทั้งหมด?', all:'Reset ทั้งหมด?', firebase:'ลบข้อมูลทั้งหมดออกจาก Firebase?' };
-  const subs   = { scores:'ลบคะแนน + submissions ทั้งหมด (ข้อมูลน้องและภารกิจยังอยู่)', all:'ล้างข้อมูลทั้งหมด ไม่สามารถกู้คืนได้!', firebase:'ลบข้อมูลทั้งหมดออกจาก Firebase และ localStorage — ทุกอุปกรณ์จะถูกล้าง!' };
+  const titles = { scores:'Reset คะแนนทั้งหมด?', all:'Reset ทั้งหมด?' };
+  const subs   = { scores:'ลบคะแนน + submissions ทั้งหมด (ข้อมูลน้องและภารกิจยังอยู่)', all:'ล้าง localStorage ทั้งหมด ไม่สามารถกู้คืนได้!' };
   document.getElementById('confirmTitle').textContent = titles[type];
   document.getElementById('confirmSub').textContent   = subs[type];
   document.getElementById('confirmOkBtn').onclick = () => {
     if (type==='scores') DB.resetScoresOnly();
-    else if (type==='firebase') {
-      DB.resetAll();
-      showToast('🗑 ลบข้อมูลทั้งหมดแล้ว', 'error');
-    } else DB.resetAll();
+    else DB.resetAll();
     document.getElementById('confirmModal').classList.remove('open');
     renderSidebar(); renderExportPage();
     showToast(type==='all'?'💣 Reset สมบูรณ์':'🔄 Reset คะแนนแล้ว', type==='all'?'error':'success');

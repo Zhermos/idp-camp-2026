@@ -1,7 +1,6 @@
 /* ═══════════════════════════════════════════════════════
    IDP CAMP 2026 — DATA LAYER
-   API เหมือนเดิมทุกอย่าง (sync) แต่ sync กับ Firebase ใน background
-   HTML ทุกไฟล์ไม่ต้องแก้อะไรเลย
+   Firebase Realtime DB + Firebase Auth (Google Sign-In)
    ═══════════════════════════════════════════════════════ */
 'use strict';
 
@@ -18,21 +17,109 @@ const firebaseConfig = {
 const CLOUDINARY_CLOUD  = 'dplksxazw';
 const CLOUDINARY_PRESET = 'idp_camp';
 
-let _fbReady = false, _db = null;
+// ── Firebase init ──────────────────────────────────────
+let _fbReady = false, _db = null, _auth = null;
 try {
   if (typeof firebase !== 'undefined') {
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    _db = firebase.database();
+    _db    = firebase.database();
+    _auth  = firebase.auth();
     _fbReady = true;
   }
 } catch(e) { console.warn('Firebase init failed:', e); }
 
+// ── Google Auth helpers ────────────────────────────────
+const AUTH = {
+  // Sign in with Google popup
+  signInWithGoogle() {
+    if (!_auth) return Promise.reject('Firebase not ready');
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    return _auth.signInWithPopup(provider);
+  },
+
+  // Sign out
+  signOut() {
+    if (!_auth) return Promise.resolve();
+    return _auth.signOut();
+  },
+
+  // Get current Firebase user (null if not signed in)
+  currentUser() {
+    return _auth ? _auth.currentUser : null;
+  },
+
+  // Listen for auth state changes
+  onAuthStateChanged(cb) {
+    if (!_auth) return;
+    _auth.onAuthStateChanged(cb);
+  },
+
+  // Check if email is in staff whitelist (stored in Firebase DB)
+  async isStaff(email) {
+    if (!_db || !email) return false;
+    try {
+      const snap = await _db.ref('whitelist/staff/' + _emailKey(email)).once('value');
+      return snap.exists();
+    } catch { return false; }
+  },
+
+  // Check if email is admin
+  async isAdmin(email) {
+    if (!_db || !email) return false;
+    try {
+      const snap = await _db.ref('whitelist/admin/' + _emailKey(email)).once('value');
+      return snap.exists();
+    } catch { return false; }
+  },
+
+  // Add staff email to whitelist
+  async addStaffEmail(email, name) {
+    if (!_db) return;
+    await _db.ref('whitelist/staff/' + _emailKey(email)).set({ email, name, addedAt: isoNow() });
+  },
+
+  // Add admin email to whitelist
+  async addAdminEmail(email, name) {
+    if (!_db) return;
+    await _db.ref('whitelist/admin/' + _emailKey(email)).set({ email, name, addedAt: isoNow() });
+  },
+
+  // Remove from whitelist
+  async removeStaffEmail(email) {
+    if (!_db) return;
+    await _db.ref('whitelist/staff/' + _emailKey(email)).remove();
+  },
+  async removeAdminEmail(email) {
+    if (!_db) return;
+    await _db.ref('whitelist/admin/' + _emailKey(email)).remove();
+  },
+
+  // Get all staff whitelist
+  async getStaffWhitelist() {
+    if (!_db) return [];
+    const snap = await _db.ref('whitelist/staff').once('value');
+    return snap.val() ? Object.values(snap.val()) : [];
+  },
+
+  // Get all admin whitelist
+  async getAdminWhitelist() {
+    if (!_db) return [];
+    const snap = await _db.ref('whitelist/admin').once('value');
+    return snap.val() ? Object.values(snap.val()) : [];
+  },
+};
+
+// email → safe Firebase key (replace . with ,)
+function _emailKey(email) { return email.replace(/\./g, ','); }
+
+// ── Defaults ───────────────────────────────────────────
 const DEFAULT_TEAMS = [
-  { id:'red',    name:'Moira Conclave',    color:'#c0392b', score:0, icon:'🔴', deity:'Hades',    members:[] },
-  { id:'green',  name:'Ares Exiles',    color:'#27ae60', score:0, icon:'🟢', deity:'Athena',   members:[] },
-  { id:'yellow', name:'Promethean Arcanum',  color:'#d4a017', score:0, icon:'🟡', deity:'Apollo',   members:[] },
-  { id:'blue',   name:'Hubris Order',  color:'#2980b9', score:0, icon:'🔵', deity:'Poseidon', members:[] },
-  { id:'purple',   name:'Hermesian Veil',  color:'#9729b9', score:0, icon:'🟣', deity:'Poseidon', members:[] },
+  { id:'red',    name:'Moira Conclave',     color:'#c0392b', score:0, icon:'🔴', deity:'Hades',    members:[] },
+  { id:'green',  name:'Ares Exiles',        color:'#27ae60', score:0, icon:'🟢', deity:'Athena',   members:[] },
+  { id:'yellow', name:'Promethean Arcanum', color:'#d4a017', score:0, icon:'🟡', deity:'Apollo',   members:[] },
+  { id:'blue',   name:'Hubris Order',       color:'#2980b9', score:0, icon:'🔵', deity:'Poseidon', members:[] },
+  { id:'purple', name:'Hermesian Veil',     color:'#9729b9', score:0, icon:'🟣', deity:'Hermes',   members:[] },
 ];
 
 const DEFAULT_QUESTS = [
@@ -44,12 +131,6 @@ const DEFAULT_QUESTS = [
   { id:6, icon:'🍱', name:'รับประทานอาหารครบ',  desc:'รับประทานทุกมื้อพร้อมหน้า ถ่ายรูปหลักฐาน',          points:80,  type:'side',  evidence:'image', active:true },
   { id:7, icon:'⭐', name:'ช่วยงานสต๊าฟ',       desc:'อาสาช่วยงานพี่สต๊าฟ 1 ครั้งขึ้นไป',                 points:120, type:'bonus', evidence:'image', active:true },
   { id:8, icon:'🎯', name:'เกมทายปริศนา',        desc:'ตอบคำถามปริศนาให้ได้ 5 ข้อขึ้นไป',                  points:100, type:'bonus', evidence:'image', active:true },
-];
-
-const DEFAULT_STAFF = [
-  { id:'staff1', name:'พี่เอ็ม', pin:'1111', role:'staff' },
-  { id:'staff2', name:'พี่เบล', pin:'2222', role:'staff' },
-  { id:'admin1', name:'Admin',  pin:'9999', role:'admin' },
 ];
 
 const DEFAULT_BADGES = [
@@ -69,6 +150,7 @@ const KEYS = {
   countdown:'idp_countdown', session:'idp_session', nextId:'idp_nextid',
 };
 
+// ── Storage helpers ────────────────────────────────────
 function load(key, fallback) {
   try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; } catch { return fallback; }
 }
@@ -112,6 +194,7 @@ function uploadFile(file, onProgress, onDone, onError) {
   xhr.send(fd);
 }
 
+// ── DB ─────────────────────────────────────────────────
 const DB = {
   getTeams() { return load(KEYS.teams, DEFAULT_TEAMS); },
   saveTeams(t) { save(KEYS.teams, t); },
@@ -175,10 +258,8 @@ const DB = {
   },
   getPendingSubmissions() { return this.getSubmissions().filter(s => s.status === 'pending'); },
   getCamperSubmissions(camperId) { return this.getSubmissions().filter(s => s.camperId === camperId); },
-  getStaff() { return load(KEYS.staff, DEFAULT_STAFF); },
+  getStaff() { return load(KEYS.staff, []); },
   saveStaff(s) { save(KEYS.staff, s); },
-  addStaff(m) { const s = this.getStaff(); m.id = 'staff' + nextId(); s.push(m); save(KEYS.staff, s); },
-  removeStaff(id) { save(KEYS.staff, this.getStaff().filter(s => s.id !== id)); },
   getActivities() { return load(KEYS.activities, []); },
   pushActivity(text) {
     const a = this.getActivities(); a.unshift({ text, time: timestamp(), ts: isoNow() });
@@ -187,9 +268,12 @@ const DB = {
   getCountdown() { return load(KEYS.countdown, { endTs: null, label: 'เหลือเวลา' }); },
   setCountdown(h, m, label) { save(KEYS.countdown, { endTs: Date.now() + (h*3600+m*60)*1000, label: label||'เหลือเวลา' }); },
   getCountdownRemaining() { const {endTs} = this.getCountdown(); return endTs ? Math.max(0, Math.floor((endTs-Date.now())/1000)) : null; },
+
+  // Session = UID-based (campers), stored in localStorage only
   getSession() { return load(KEYS.session, null); },
   setSession(s) { try { localStorage.setItem(KEYS.session, JSON.stringify(s)); } catch {} },
   clearSession() { localStorage.removeItem(KEYS.session); },
+
   resetAll() { Object.values(KEYS).forEach(k => localStorage.removeItem(k)); if(_fbReady&&_db) _db.ref('store').remove(); },
   resetScoresOnly() {
     save(KEYS.teams, DEFAULT_TEAMS.map(t => ({ ...t, score: 0 })));
@@ -224,7 +308,6 @@ const QR = {
 (function bootstrap() {
   if (!localStorage.getItem(KEYS.teams))  save(KEYS.teams,  DEFAULT_TEAMS);
   if (!localStorage.getItem(KEYS.quests)) save(KEYS.quests, DEFAULT_QUESTS);
-  if (!localStorage.getItem(KEYS.staff))  save(KEYS.staff,  DEFAULT_STAFF);
   _syncFromFirebase();
   setTimeout(_listenFirebase, 1500);
 })();
