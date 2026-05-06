@@ -549,9 +549,9 @@ function renderTeamsPage() {
     </div>`}).join('');
 
   // Members table
-  const campers = DB.getCampers().sort((a,b)=>(b.score||0)-(a.score||0));
+  const campersSorted = DB.getCampers().sort((a,b)=>(b.score||0)-(a.score||0));
   const subs = DB.getSubmissions();
-  document.getElementById('allMembersBody').innerHTML = campers.map(c=>{
+  document.getElementById('allMembersBody').innerHTML = campersSorted.map(c=>{
     const team = teams.find(t=>t.id===c.teamId);
     const done = subs.filter(s=>s.camperId===c.id&&s.status==='approved').length;
     return `<tr>
