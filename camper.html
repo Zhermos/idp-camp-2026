@@ -302,6 +302,23 @@ async function registerCamper() {
 function _doRegister(uid, name, photoURL) {
   const team = DB.getTeam(teamId);
   if (!team) return;
+
+  // ── เช็คทีมเต็ม ──
+  if (team.maxMembers) {
+    const currentCount = DB.getCampersByTeam(teamId).length;
+    if (currentCount >= team.maxMembers) {
+      document.getElementById('registerWrap').style.display = 'flex';
+      document.getElementById('registerWrap').style.flexDirection = 'column';
+      document.getElementById('registerWrap').style.flex = '1';
+      document.getElementById('registerStatus').style.color = '#f87171';
+      document.getElementById('registerStatus').textContent = `❌ ทีม ${team.name} เต็มแล้ว (${currentCount}/${team.maxMembers} คน)`;
+      const btn = document.getElementById('googleRegisterBtn');
+      if (btn) btn.disabled = false;
+      AUTH.signOut();
+      return;
+    }
+  }
+
   const camperId = 'c' + uid;
   const camper = { id: camperId, name, teamId, uid, score: 0, badges: [], photoURL: photoURL||null, createdAt: new Date().toISOString() };
   DB.upsertCamper(camper);
