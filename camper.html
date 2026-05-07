@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TARTARUS — น้องค่าย</title>
 <link rel="stylesheet" href="style.css">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="data.js"></script>
 </head>
 <body>
 <div class="app-shell">
@@ -36,7 +40,7 @@
         <span class="team-badge-score" id="headerTeamScore"></span>
       </div>
       <span class="role-chip camper">👤 CAMPER</span>
-      <div class="user-avatar" id="headerAvatar">?</div>
+      <div class="user-avatar" id="headerAvatar" title="เปลี่ยนบัญชี" onclick="camperLogout()" style="cursor:pointer">?</div>
     </div>
   </header>
 
@@ -208,10 +212,6 @@
 
 <div class="toast-container" id="toastContainer"></div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="data.js"></script>
 <script>
 // ── STATE ─────────────────────────
 let session   = null;   // { camperId, teamId, name, uid }
@@ -267,6 +267,17 @@ function boot() {
   setupOffline();
   startCountdown();
   setInterval(refreshActivity, 10000);
+  // เช็คทุก 10 วิว่าถูกลบออกจากระบบหรือยัง
+  setInterval(async () => {
+    if (!session) return;
+    const still = DB.getCamper(session.camperId);
+    if (!still) {
+      alert('บัญชีของคุณถูกลบออกจากระบบโดย Admin');
+      DB.clearSession();
+      await AUTH.signOut();
+      location.reload();
+    }
+  }, 10000);
 }
 
 function showRegister() {
@@ -285,16 +296,11 @@ async function registerCamper() {
   const btn = document.getElementById('googleRegisterBtn');
   const status = document.getElementById('registerStatus');
   if (btn) btn.disabled = true;
-  if (status) { status.textContent = 'กำลังเชื่อมต่อ Google...'; status.style.color = 'var(--text-shadow)'; }
+  if (status) { status.textContent = 'กำลัง redirect ไป Google...'; status.style.color = 'var(--text-shadow)'; }
   try {
-    await AUTH.signInWithGoogle();
-    // onAuthStateChanged will handle the rest
+    await AUTH.signInWithGoogle(); // redirect — page will reload
   } catch(e) {
-    if (e.code !== 'auth/popup-closed-by-user') {
-      if (status) { status.style.color = '#e57373'; status.textContent = '❌ ' + (e.message || 'เกิดข้อผิดพลาด'); }
-    } else {
-      if (status) status.textContent = '';
-    }
+    if (status) { status.style.color = '#e57373'; status.textContent = '❌ ' + (e.message || 'เกิดข้อผิดพลาด'); }
     if (btn) btn.disabled = false;
   }
 }
@@ -302,6 +308,23 @@ async function registerCamper() {
 function _doRegister(uid, name, photoURL) {
   const team = DB.getTeam(teamId);
   if (!team) return;
+
+  // ── เช็คทีมเต็ม ──
+  if (team.maxMembers) {
+    const currentCount = DB.getCampersByTeam(teamId).length;
+    if (currentCount >= team.maxMembers) {
+      document.getElementById('registerWrap').style.display = 'flex';
+      document.getElementById('registerWrap').style.flexDirection = 'column';
+      document.getElementById('registerWrap').style.flex = '1';
+      document.getElementById('registerStatus').style.color = '#f87171';
+      document.getElementById('registerStatus').textContent = `❌ ทีม ${team.name} เต็มแล้ว (${currentCount}/${team.maxMembers} คน)`;
+      const btn = document.getElementById('googleRegisterBtn');
+      if (btn) btn.disabled = false;
+      AUTH.signOut();
+      return;
+    }
+  }
+
   const camperId = 'c' + uid;
   const camper = { id: camperId, name, teamId, uid, score: 0, badges: [], photoURL: photoURL||null, createdAt: new Date().toISOString() };
   DB.upsertCamper(camper);
@@ -313,6 +336,14 @@ function _doRegister(uid, name, photoURL) {
   DB.pushActivity(`${team.icon} <b style="color:${team.color}">${name}</b> เข้าร่วม${team.name}!`);
   document.getElementById('registerWrap').style.display = 'none';
   showApp();
+}
+
+async function camperLogout() {
+  if (!confirm('เปลี่ยนบัญชี Google ไหม?')) return;
+  DB.clearSession();
+  await AUTH.signOut();
+  // reload เพื่อให้ onAuthStateChanged trigger ใหม่
+  location.reload();
 }
 
 function showApp() {

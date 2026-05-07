@@ -550,17 +550,22 @@ function renderTeamsPage() {
 
 function deleteCamper(camperId, name) {
   if (!confirm(`ลบ "${name}" ออกจากระบบ?\n\nข้อมูลคะแนนและ submissions จะถูกลบด้วย`)) return;
-  // ลบ camper
+  // ลบออกจาก members ในทีม
   DB.saveTeams(DB.getTeams().map(t => ({ ...t, members: (t.members||[]).filter(m => m !== camperId) })));
-  // ลบ submissions ของ camper นี้
+  // ลบ submissions
   const subs = DB.getSubmissions().filter(s => s.camperId !== camperId);
-  DB.updateSubmission && subs; // fallback
   localStorage.setItem('idp_submissions', JSON.stringify(subs));
   if (_fbReady && _db) _db.ref('store/idp_submissions').set(subs);
   // ลบ camper
   const campers = DB.getCampers().filter(c => c.id !== camperId);
   localStorage.setItem('idp_campers', JSON.stringify(campers));
   if (_fbReady && _db) _db.ref('store/idp_campers').set(campers);
+  // ลบ Firebase Auth user (ถ้า uid ตรงกับที่ login อยู่)
+  if (_auth && _auth.currentUser && _auth.currentUser.uid === camperId.replace('c','')) {
+    _auth.currentUser.delete().catch(()=>{});
+  }
+  // ลบ uid mapping ใน Firebase
+  if (_fbReady && _db) _db.ref('store/idp_session').remove();
   renderTeamsPage();
   showToast(`🗑️ ลบ ${name} แล้ว`);
 }
