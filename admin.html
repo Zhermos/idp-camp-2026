@@ -167,51 +167,36 @@
         <div class="page" id="page-roles">
           <div class="page-header">
             <h1 class="page-title">🛡 Role Management</h1>
-            <p class="page-subtitle">จัดการสิทธิ์เข้าถึงด้วย Google Email Whitelist</p>
+            <p class="page-subtitle">จัดการพี่สต๊าฟและสิทธิ์การเข้าถึง</p>
           </div>
-
-          <!-- Add Staff -->
           <div class="card">
-            <div class="card-header"><span class="card-title">✦ เพิ่ม Staff Email</span></div>
+            <div class="card-header"><span class="card-title">✦ เพิ่มสต๊าฟใหม่</span></div>
             <div class="card-body">
               <div class="form-row">
-                <div class="form-group" style="flex:2">
-                  <label class="form-label">Google Email</label>
-                  <input class="form-input" id="staffEmail" placeholder="example@gmail.com" type="email">
+                <div class="form-group">
+                  <label class="form-label">ชื่อ</label>
+                  <input class="form-input" id="staffName" placeholder="ชื่อพี่สต๊าฟ">
                 </div>
-                <div class="form-group" style="flex:1">
-                  <label class="form-label">ชื่อ (ไว้อ้างอิง)</label>
-                  <input class="form-input" id="staffEmailName" placeholder="พี่เอ็ม">
+                <div class="form-group">
+                  <label class="form-label">PIN</label>
+                  <input class="form-input" id="staffPin" type="password" placeholder="PIN 4 ตัว" maxlength="10">
                 </div>
-              </div>
-              <button class="btn btn-primary" onclick="addStaffEmail()">✦ เพิ่ม Staff</button>
-            </div>
-          </div>
-
-          <!-- Add Admin -->
-          <div class="card mt-16">
-            <div class="card-header"><span class="card-title">👑 เพิ่ม Admin Email</span></div>
-            <div class="card-body">
-              <div class="form-row">
-                <div class="form-group" style="flex:2">
-                  <label class="form-label">Google Email</label>
-                  <input class="form-input" id="adminEmail" placeholder="example@gmail.com" type="email">
-                </div>
-                <div class="form-group" style="flex:1">
-                  <label class="form-label">ชื่อ (ไว้อ้างอิง)</label>
-                  <input class="form-input" id="adminEmailName" placeholder="Admin">
+                <div class="form-group">
+                  <label class="form-label">Role</label>
+                  <select class="form-select" id="staffRole">
+                    <option value="staff">🛠 Staff</option>
+                    <option value="admin">👑 Admin</option>
+                  </select>
                 </div>
               </div>
-              <button class="btn btn-primary" onclick="addAdminEmail()">👑 เพิ่ม Admin</button>
+              <button class="btn btn-primary" onclick="addStaff()">✦ เพิ่มสต๊าฟ</button>
             </div>
           </div>
-
-          <!-- Staff Whitelist -->
           <div class="card mt-16">
-            <div class="card-header"><span class="card-title">📋 Staff Whitelist</span></div>
+            <div class="card-header"><span class="card-title">📋 รายชื่อสต๊าฟ</span></div>
             <div class="card-body" style="padding:0">
               <table class="data-table">
-                <thead><tr><th>Email</th><th>ชื่อ</th><th>Role</th><th></th></tr></thead>
+                <thead><tr><th>ชื่อ</th><th>Role</th><th>PIN</th><th></th></tr></thead>
                 <tbody id="staffTable"></tbody>
               </table>
             </div>
@@ -464,50 +449,34 @@ function startTimerPreview() {
 }
 
 // ── ROLES ──────────────────────────
-async function renderRolesPage() {
-  const [staffList, adminList] = await Promise.all([AUTH.getStaffWhitelist(), AUTH.getAdminWhitelist()]);
-  const all = [
-    ...staffList.map(s => ({ ...s, role: 'staff' })),
-    ...adminList.map(s => ({ ...s, role: 'admin' })),
-  ];
-  document.getElementById('staffTable').innerHTML = all.length ? all.map(s => `
+function renderRolesPage() {
+  const staff = DB.getStaff();
+  document.getElementById('staffTable').innerHTML = staff.length ? staff.map(s => `
     <tr>
-      <td style="font-family:var(--font-mono);font-size:12px">${s.email}</td>
-      <td style="font-family:var(--font-title);font-size:13px">${s.name || '-'}</td>
+      <td style="font-family:var(--font-title);font-size:13px">${s.name}</td>
       <td><span class="role-chip ${s.role}" style="display:inline">${s.role === 'admin' ? '👑 Admin' : '🛠 Staff'}</span></td>
-      <td><button class="btn btn-danger btn-sm" onclick="removeWhitelist('${s.email}','${s.role}')">ลบ</button></td>
-    </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-shadow);padding:20px">ยังไม่มีรายชื่อ</td></tr>';
+      <td style="font-family:var(--font-mono);font-size:12px;color:var(--text-shadow)">${'•'.repeat(s.pin.length)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="removeStaff('${s.id}')" ${s.id==='admin1'?'disabled title="Admin หลักลบไม่ได้"':''}>ลบ</button></td>
+    </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--text-shadow);padding:20px">ยังไม่มีสต๊าฟ</td></tr>';
 }
 
-async function addStaffEmail() {
-  const email = document.getElementById('staffEmail').value.trim().toLowerCase();
-  const name  = document.getElementById('staffEmailName').value.trim();
-  if (!email) { showToast('กรอก Email ก่อน', 'error'); return; }
-  await AUTH.addStaffEmail(email, name || email);
-  document.getElementById('staffEmail').value = '';
-  document.getElementById('staffEmailName').value = '';
+function addStaff() {
+  const name = document.getElementById('staffName').value.trim();
+  const pin  = document.getElementById('staffPin').value.trim();
+  const role = document.getElementById('staffRole').value;
+  if (!name || !pin) { showToast('กรอกชื่อและ PIN', 'error'); return; }
+  if (DB.getStaff().find(s => s.pin === pin)) { showToast('PIN นี้ถูกใช้แล้ว', 'error'); return; }
+  DB.addStaff({ name, pin, role });
+  document.getElementById('staffName').value = '';
+  document.getElementById('staffPin').value  = '';
   renderRolesPage();
-  showToast(`✦ เพิ่ม ${email} เป็น Staff แล้ว`, 'success');
+  showToast(`✦ เพิ่ม ${name} แล้ว`, 'success');
 }
 
-async function addAdminEmail() {
-  const email = document.getElementById('adminEmail').value.trim().toLowerCase();
-  const name  = document.getElementById('adminEmailName').value.trim();
-  if (!email) { showToast('กรอก Email ก่อน', 'error'); return; }
-  await AUTH.addAdminEmail(email, name || email);
-  // Also add as staff so admin can use staff portal too
-  await AUTH.addStaffEmail(email, name || email);
-  document.getElementById('adminEmail').value = '';
-  document.getElementById('adminEmailName').value = '';
+function removeStaff(id) {
+  DB.removeStaff(id);
   renderRolesPage();
-  showToast(`👑 เพิ่ม ${email} เป็น Admin แล้ว`, 'success');
-}
-
-async function removeWhitelist(email, role) {
-  if (role === 'admin') await AUTH.removeAdminEmail(email);
-  await AUTH.removeStaffEmail(email);
-  renderRolesPage();
-  showToast('ลบออกแล้ว');
+  showToast('ลบสต๊าฟแล้ว');
 }
 
 // ── TEAMS ──────────────────────────
