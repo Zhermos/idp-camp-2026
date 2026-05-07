@@ -268,6 +268,26 @@
             </div>
           </div>
 
+          <!-- Firebase Manual Sync -->
+          <div class="grid-2 mt-16">
+            <div class="card">
+              <div class="card-header"><span class="card-title">☁️ Firebase Sync</span></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+                <button class="btn btn-primary btn-full" onclick="manualSyncToFirebase()">⬆️ Save ข้อมูลขึ้น Firebase</button>
+                <div style="font-size:11px;color:var(--text-shadow);line-height:1.6">บังคับ sync ข้อมูลทั้งหมดจาก localStorage ขึ้น Firebase ทันที</div>
+                <div id="syncStatus" style="font-size:12px;text-align:center;min-height:18px"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><span class="card-title" style="color:#f87171">🗑️ ลบข้อมูลใน Firebase</span></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+                <button class="btn btn-danger btn-full" onclick="confirmDeleteFirebase()">🗑️ ลบข้อมูลทั้งหมดใน Firebase</button>
+                <div style="font-size:11px;color:var(--text-shadow);line-height:1.6">ลบเฉพาะข้อมูลใน Firebase (store/) — localStorage ยังคงอยู่</div>
+                <div id="deleteStatus" style="font-size:12px;text-align:center;min-height:18px"></div>
+              </div>
+            </div>
+          </div>
+
           <!-- Summary preview -->
           <div class="card mt-16">
             <div class="card-header"><span class="card-title">📋 สรุปข้อมูล</span></div>
@@ -592,6 +612,45 @@ function exportJSON() {
   a.href = url; a.download = 'tartarus_camp_data.json'; a.click();
   URL.revokeObjectURL(url);
   showToast('📄 Download JSON แล้ว', 'success');
+}
+
+async function manualSyncToFirebase() {
+  const status = document.getElementById('syncStatus');
+  status.style.color = 'var(--gold)';
+  status.textContent = '⏳ กำลัง sync...';
+  if (!_fbReady || !_db) { status.style.color = '#f87171'; status.textContent = '❌ Firebase ไม่พร้อม'; return; }
+  try {
+    const keys = [KEYS.teams, KEYS.quests, KEYS.campers, KEYS.submissions, KEYS.staff, KEYS.activities, KEYS.countdown];
+    for (const key of keys) {
+      const val = localStorage.getItem(key);
+      if (val) await _db.ref('store/' + key).set(JSON.parse(val));
+    }
+    status.style.color = 'var(--magic-green)';
+    status.textContent = '✅ Sync สำเร็จ!';
+    showToast('☁️ Sync ขึ้น Firebase แล้ว', 'success');
+  } catch(e) {
+    status.style.color = '#f87171';
+    status.textContent = '❌ Error: ' + e.message;
+  }
+  setTimeout(() => status.textContent = '', 3000);
+}
+
+async function confirmDeleteFirebase() {
+  const status = document.getElementById('deleteStatus');
+  if (!confirm('ลบข้อมูลทั้งหมดใน Firebase (store/) ?\n\nข้อมูลใน localStorage ยังคงอยู่')) return;
+  status.style.color = 'var(--gold)';
+  status.textContent = '⏳ กำลังลบ...';
+  if (!_fbReady || !_db) { status.style.color = '#f87171'; status.textContent = '❌ Firebase ไม่พร้อม'; return; }
+  try {
+    await _db.ref('store').remove();
+    status.style.color = 'var(--magic-green)';
+    status.textContent = '✅ ลบข้อมูลใน Firebase แล้ว';
+    showToast('🗑️ ลบข้อมูลใน Firebase แล้ว');
+  } catch(e) {
+    status.style.color = '#f87171';
+    status.textContent = '❌ Error: ' + e.message;
+  }
+  setTimeout(() => status.textContent = '', 3000);
 }
 
 function confirmReset(type) {
