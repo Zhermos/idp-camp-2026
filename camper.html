@@ -333,7 +333,7 @@ function _doRegister(uid, name, photoURL) {
   if (t && !t.members.includes(camperId)) { t.members.push(camperId); DB.saveTeams(teams); }
   session = { camperId, teamId, name, uid };
   DB.setSession(session);
-  DB.pushActivity(`${team.icon} <b style="color:${team.color}">${name}</b> เข้าร่วม${team.name}!`);
+  DB.pushActivity(`${team.icon} <b style="color:${team.color}">${name}</b> เข้าร่วม${team.name}!`, teamId);
   document.getElementById('registerWrap').style.display = 'none';
   showApp();
 }
@@ -478,7 +478,7 @@ function submitWork() {
     desc:       document.getElementById('submissionDesc').value,
     hasFile:    !!document.getElementById('fileInput').files?.[0],
   });
-  DB.pushActivity(`${team.icon} <b style="color:${team.color}">${session.name}</b> ส่งหลักฐาน "${q.name}"`);
+  DB.pushActivity(`${team.icon} <b style="color:${team.color}">${session.name}</b> ส่งหลักฐาน "${q.name}"`, session.teamId);
   closeModal();
   renderQuestGrid();
   renderSidebar();
@@ -579,9 +579,9 @@ function renderProfile() {
 
 // ── ACTIVITY ──────────────────────
 function renderActivity() {
-  const acts = DB.getActivities();
+  const acts = DB.getActivities().filter(a => !a.teamId || a.teamId === session?.teamId);
   document.getElementById('activityFeed').innerHTML = acts.slice(0,20).map(a=>`
-    <div class="activity-item"><div>${a.text}</div><div class="activity-time">${a.time}</div></div>`).join('');
+    <div class="activity-item"><div>${a.text}</div><div class="activity-time">${a.time}</div></div>`).join('') || '<div style="color:var(--text-shadow);font-size:12px;padding:12px">ยังไม่มีกิจกรรม</div>';
 }
 function refreshActivity() {
   renderActivity();

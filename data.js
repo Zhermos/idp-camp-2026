@@ -30,12 +30,18 @@ try {
 
 // ── Google Auth helpers ────────────────────────────────
 const AUTH = {
-  // Sign in with Google popup
+  // Sign in with Google (redirect — works on GitHub Pages)
   signInWithGoogle() {
     if (!_auth) return Promise.reject('Firebase not ready');
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    return _auth.signInWithPopup(provider);
+    return _auth.signInWithRedirect(provider);
+  },
+
+  // Call on page load to get redirect result
+  getRedirectResult() {
+    if (!_auth) return Promise.resolve(null);
+    return _auth.getRedirectResult();
   },
 
   // Sign out
@@ -261,8 +267,8 @@ const DB = {
   getStaff() { return load(KEYS.staff, []); },
   saveStaff(s) { save(KEYS.staff, s); },
   getActivities() { return load(KEYS.activities, []); },
-  pushActivity(text) {
-    const a = this.getActivities(); a.unshift({ text, time: timestamp(), ts: isoNow() });
+  pushActivity(text, teamId) {
+    const a = this.getActivities(); a.unshift({ text, time: timestamp(), ts: isoNow(), teamId: teamId||null });
     if (a.length > 50) a.pop(); save(KEYS.activities, a);
   },
   getCountdown() { return load(KEYS.countdown, { endTs: null, label: 'เหลือเวลา' }); },
