@@ -235,7 +235,7 @@
             <div class="card-header"><span class="card-title">📊 สมาชิกทีม</span></div>
             <div class="card-body" style="padding:0">
               <table class="data-table" id="teamMembersTable">
-                <thead><tr><th>ชื่อ</th><th>ทีม</th><th>คะแนน</th><th>ภารกิจ</th></tr></thead>
+                <thead><tr><th>ชื่อ</th><th>ทีม</th><th>คะแนน</th><th>ภารกิจ</th><th></th></tr></thead>
                 <tbody id="allMembersBody"></tbody>
               </table>
             </div>
@@ -543,8 +543,26 @@ function renderTeamsPage() {
       <td style="color:${team?.color}">${team?.name||'—'}</td>
       <td style="font-family:var(--font-mono);color:var(--gold)">${(c.score||0).toLocaleString()}</td>
       <td style="color:var(--magic-green)">${done}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteCamper('${c.id}','${c.name}')">ลบ</button></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--text-shadow);padding:20px">ยังไม่มีน้องลงทะเบียน</td></tr>';
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-shadow);padding:20px">ยังไม่มีน้องลงทะเบียน</td></tr>';
+}
+
+function deleteCamper(camperId, name) {
+  if (!confirm(`ลบ "${name}" ออกจากระบบ?\n\nข้อมูลคะแนนและ submissions จะถูกลบด้วย`)) return;
+  // ลบ camper
+  DB.saveTeams(DB.getTeams().map(t => ({ ...t, members: (t.members||[]).filter(m => m !== camperId) })));
+  // ลบ submissions ของ camper นี้
+  const subs = DB.getSubmissions().filter(s => s.camperId !== camperId);
+  DB.updateSubmission && subs; // fallback
+  localStorage.setItem('idp_submissions', JSON.stringify(subs));
+  if (_fbReady && _db) _db.ref('store/idp_submissions').set(subs);
+  // ลบ camper
+  const campers = DB.getCampers().filter(c => c.id !== camperId);
+  localStorage.setItem('idp_campers', JSON.stringify(campers));
+  if (_fbReady && _db) _db.ref('store/idp_campers').set(campers);
+  renderTeamsPage();
+  showToast(`🗑️ ลบ ${name} แล้ว`);
 }
 
 function saveTeams() {
