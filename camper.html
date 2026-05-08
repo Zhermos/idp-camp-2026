@@ -223,68 +223,62 @@ let countdownInt   = null;
 const QUOTES = ['"γνῶθι σεαυτόν" — รู้จักตัวเอง', '"Courage is knowing what not to fear"', '"Even gods are bound by fate"'];
 
 // ── BOOT ──────────────────────────
+let _bootDone = false;
+
 function boot() {
   const params = new URLSearchParams(location.search);
   teamId = params.get('team');
 
-  AUTH.onAuthStateChanged(async user => {
+  // ใช้ onAuthStateChanged แค่ครั้งเดียว
+  const unsubscribe = AUTH.onAuthStateChanged(async user => {
+    if (_bootDone) return;  // ป้องกันเรียกซ้ำ
+    _bootDone = true;
+    unsubscribe && unsubscribe();
+
     if (!user) {
-      session = null;
-      DB.clearSession();
+      // ไม่ได้ login
       if (!teamId) {
         document.body.innerHTML = `<div class="login-wrap"><div class="login-card"><div class="login-logo">TARTARUS</div><div class="login-sub">กรุณาสแกน QR Code ของทีมคุณ</div></div></div>`;
         return;
       }
       showRegister();
-    } else {
-      const uid = user.uid;
+      return;
+    }
 
-      // แสดง loading ระหว่างรอ Firebase sync
-      document.getElementById('registerWrap').style.display = 'none';
-      document.getElementById('appWrap').style.display = 'none';
-      if (!document.getElementById('loadingWrap')) {
-        const div = document.createElement('div');
-        div.id = 'loadingWrap';
-        div.style.cssText = 'display:flex;flex:1;align-items:center;justify-content:center;flex-direction:column;gap:16px';
-        div.innerHTML = '<div style="font-family:var(--font-title);font-size:24px;color:var(--gold);letter-spacing:4px">TARTARUS</div><div style="color:var(--text-shadow);font-size:13px;animation:pulse 1.5s ease-in-out infinite">⚡ กำลังโหลดข้อมูล...</div>';
-        document.querySelector('.app-shell').appendChild(div);
-      }
+    // Login แล้ว — รอ Firebase pull data ก่อน
+    const uid = user.uid;
+    await new Promise(r => setTimeout(r, 1500));
 
-      // รอ Firebase sync ก่อน
-      await new Promise(r => setTimeout(r, 2000));
-      const loadingEl = document.getElementById('loadingWrap');
-      if (loadingEl) loadingEl.remove();
-
-      if (!teamId) {
-        const all = DB.getCampers();
-        const found = all.find(c => c.uid === uid);
-        if (found) {
-          teamId = found.teamId;
-          session = { camperId: found.id, teamId: found.teamId, name: found.name, uid };
-          DB.setSession(session);
-          showApp();
-        } else {
-          document.body.innerHTML = `<div class="login-wrap"><div class="login-card"><div class="login-logo">TARTARUS</div><div class="login-sub">กรุณาสแกน QR Code ของทีมคุณ</div></div></div>`;
-        }
-        return;
-      }
-      const existing = DB.getCampers().find(c => c.uid === uid && c.teamId === teamId);
-      if (existing) {
-        session = { camperId: existing.id, teamId, name: existing.name, uid };
+    if (!teamId) {
+      // ไม่มี teamId ใน URL — หาจาก uid
+      const found = DB.getCampers().find(c => c.uid === uid);
+      if (found) {
+        teamId = found.teamId;
+        session = { camperId: found.id, teamId: found.teamId, name: found.name, uid };
         DB.setSession(session);
-        document.getElementById('registerWrap').style.display = 'none';
         showApp();
       } else {
-        const name = user.displayName || user.email.split('@')[0];
-        _doRegister(uid, name, user.photoURL);
+        document.body.innerHTML = `<div class="login-wrap"><div class="login-card"><div class="login-logo">TARTARUS</div><div class="login-sub">กรุณาสแกน QR Code ของทีมคุณ</div></div></div>`;
       }
+      return;
+    }
+
+    // มี teamId — เช็คว่าเคย register ไว้ไหม
+    const existing = DB.getCampers().find(c => c.uid === uid && c.teamId === teamId);
+    if (existing) {
+      session = { camperId: existing.id, teamId, name: existing.name, uid };
+      DB.setSession(session);
+      showApp();
+    } else {
+      // ยังไม่เคย register — ลงทะเบียนด้วยชื่อจาก Google
+      const name = user.displayName || user.email.split('@')[0];
+      _doRegister(uid, name, user.photoURL);
     }
   });
 
   setupOffline();
   startCountdown();
   setInterval(refreshActivity, 10000);
-  // เช็คทุก 10 วิว่าถูกลบออกจากระบบหรือยัง
   setInterval(async () => {
     if (!session) return;
     const still = DB.getCamper(session.camperId);
