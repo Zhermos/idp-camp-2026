@@ -239,8 +239,21 @@ function boot() {
     } else {
       const uid = user.uid;
 
-      // รอ Firebase sync ก่อน 1.5 วิ เพื่อให้ข้อมูล campers โหลดครบ
-      await new Promise(r => setTimeout(r, 1500));
+      // แสดง loading ระหว่างรอ Firebase sync
+      document.getElementById('registerWrap').style.display = 'none';
+      document.getElementById('appWrap').style.display = 'none';
+      if (!document.getElementById('loadingWrap')) {
+        const div = document.createElement('div');
+        div.id = 'loadingWrap';
+        div.style.cssText = 'display:flex;flex:1;align-items:center;justify-content:center;flex-direction:column;gap:16px';
+        div.innerHTML = '<div style="font-family:var(--font-title);font-size:24px;color:var(--gold);letter-spacing:4px">TARTARUS</div><div style="color:var(--text-shadow);font-size:13px;animation:pulse 1.5s ease-in-out infinite">⚡ กำลังโหลดข้อมูล...</div>';
+        document.querySelector('.app-shell').appendChild(div);
+      }
+
+      // รอ Firebase sync ก่อน
+      await new Promise(r => setTimeout(r, 2000));
+      const loadingEl = document.getElementById('loadingWrap');
+      if (loadingEl) loadingEl.remove();
 
       if (!teamId) {
         const all = DB.getCampers();
@@ -375,6 +388,7 @@ function renderHeader() {
 
 // ── SIDEBAR ───────────────────────
 function renderSidebar() {
+  if (!session) return;
   const teams = DB.getTeams().sort((a,b) => b.score - a.score);
   document.getElementById('teamsMini').innerHTML = teams.map(t => `
     <div class="team-mini-item">
@@ -588,6 +602,7 @@ function renderActivity() {
     <div class="activity-item"><div>${a.text}</div><div class="activity-time">${a.time}</div></div>`).join('') || '<div style="color:var(--text-shadow);font-size:12px;padding:12px">ยังไม่มีกิจกรรม</div>';
 }
 function refreshActivity() {
+  if (!session) return;
   renderActivity();
   renderSidebar();
   if (document.getElementById('page-leaderboard').classList.contains('active')) renderLeaderboard();
