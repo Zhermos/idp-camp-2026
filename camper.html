@@ -307,11 +307,29 @@ async function registerCamper() {
   const btn = document.getElementById('googleRegisterBtn');
   const status = document.getElementById('registerStatus');
   if (btn) btn.disabled = true;
-  if (status) { status.textContent = 'กำลัง redirect ไป Google...'; status.style.color = 'var(--text-shadow)'; }
+  if (status) { status.textContent = 'กำลังเชื่อมต่อ Google...'; status.style.color = 'var(--text-shadow)'; }
   try {
-    await AUTH.signInWithGoogle(); // redirect — page will reload
+    const result = await AUTH.signInWithGoogle();
+    const user = result.user;
+    const name = user.displayName || user.email.split('@')[0];
+    // _bootDone อาจ true แล้ว — handle โดยตรงเลย
+    if (_bootDone) {
+      const existing = DB.getCampers().find(c => c.uid === user.uid && c.teamId === teamId);
+      if (existing) {
+        session = { camperId: existing.id, teamId, name: existing.name, uid: user.uid };
+        DB.setSession(session);
+        document.getElementById('registerWrap').style.display = 'none';
+        showApp();
+      } else {
+        _doRegister(user.uid, name, user.photoURL);
+      }
+    }
   } catch(e) {
-    if (status) { status.style.color = '#e57373'; status.textContent = '❌ ' + (e.message || 'เกิดข้อผิดพลาด'); }
+    if (e.code !== 'auth/popup-closed-by-user') {
+      if (status) { status.style.color = '#e57373'; status.textContent = '❌ ' + (e.message || 'เกิดข้อผิดพลาด'); }
+    } else {
+      if (status) status.textContent = '';
+    }
     if (btn) btn.disabled = false;
   }
 }

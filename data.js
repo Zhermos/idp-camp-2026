@@ -6,7 +6,7 @@
 
 const firebaseConfig = {
   apiKey:            "AIzaSyBI9o11kr2Heh8j8SAeeN5xdDlKVv1l8qA",
-  authDomain:        "zhermos.github.io",
+  authDomain:        "idp-camp-2026.firebaseapp.com",
   databaseURL:       "https://idp-camp-2026-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId:         "idp-camp-2026",
   storageBucket:     "idp-camp-2026.firebasestorage.app",
@@ -30,18 +30,12 @@ try {
 
 // ── Google Auth helpers ────────────────────────────────
 const AUTH = {
-  // Sign in with Google (redirect — works on GitHub Pages)
+  // Sign in with Google (popup)
   signInWithGoogle() {
     if (!_auth) return Promise.reject('Firebase not ready');
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
-    return _auth.signInWithRedirect(provider);
-  },
-
-  // Call on page load to get redirect result
-  getRedirectResult() {
-    if (!_auth) return Promise.resolve(null);
-    return _auth.getRedirectResult();
+    return _auth.signInWithPopup(provider);
   },
 
   // Sign out
