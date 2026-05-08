@@ -238,6 +238,10 @@ function boot() {
       showRegister();
     } else {
       const uid = user.uid;
+
+      // รอ Firebase sync ก่อน 1.5 วิ เพื่อให้ข้อมูล campers โหลดครบ
+      await new Promise(r => setTimeout(r, 1500));
+
       if (!teamId) {
         const all = DB.getCampers();
         const found = all.find(c => c.uid === uid);
