@@ -359,7 +359,7 @@ function _doRegister(uid, name, photoURL) {
   DB.upsertCamper(camper);
   const teams = DB.getTeams();
   const t = teams.find(t => t.id === teamId);
-  if (t && !t.members.includes(camperId)) { t.members.push(camperId); DB.saveTeams(teams); }
+  if (t && !(t.members||[]).includes(camperId)) { t.members = [...(t.members||[]), camperId]; DB.saveTeams(teams); }
   session = { camperId, teamId, name, uid };
   DB.setSession(session);
   DB.pushActivity(`${team.icon} <b style="color:${team.color}">${name}</b> เข้าร่วม${team.name}!`, teamId);
