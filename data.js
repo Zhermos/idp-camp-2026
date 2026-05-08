@@ -6,7 +6,7 @@
 
 const firebaseConfig = {
   apiKey:            "AIzaSyBI9o11kr2Heh8j8SAeeN5xdDlKVv1l8qA",
-  authDomain:        "idp-camp-2026.firebaseapp.com",
+  authDomain:        "zhermos.github.io",
   databaseURL:       "https://idp-camp-2026-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId:         "idp-camp-2026",
   storageBucket:     "idp-camp-2026.firebasestorage.app",
