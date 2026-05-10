@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TARTARUS — Staff</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="data.js"></script>
 </head>
 <body>
@@ -297,7 +297,7 @@ function staffLogin() {
   const staff = DB.getStaff().find(s => s.pin === pin);
   if (!staff) { showToast('PIN ไม่ถูกต้อง', 'error'); return; }
   staffSession = staff;
-  DB.setSession(staff);
+  DB.setSession({ ...staff, _type: 'staff' });
   document.getElementById('loginWrap').style.display  = 'none';
   document.getElementById('appWrap').style.display    = 'flex';
   document.getElementById('staffNameChip').textContent = staff.name;
@@ -312,6 +312,22 @@ function logout() {
   document.getElementById('loginWrap').style.flexDirection = 'column';
   document.getElementById('pinInput').value = '';
 }
+
+// Auto-restore session หลัง refresh
+(function restoreSession() {
+  const saved = DB.getSession();
+  if (saved && saved._type === 'staff' && saved.pin) {
+    const staff = DB.getStaff().find(s => s.id === saved.id);
+    if (staff) {
+      staffSession = staff;
+      document.getElementById('loginWrap').style.display = 'none';
+      document.getElementById('appWrap').style.display   = 'flex';
+      document.getElementById('staffNameChip').textContent = staff.name;
+      // initApp จะถูกเรียกหลัง DOM ready
+      document.addEventListener('DOMContentLoaded', initApp);
+    }
+  }
+})();
 
 // ── INIT ──────────────────────────
 function initApp() {

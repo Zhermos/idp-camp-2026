@@ -308,6 +308,12 @@ const QR = {
 (function bootstrap() {
   if (!localStorage.getItem(KEYS.teams))  save(KEYS.teams,  DEFAULT_TEAMS);
   if (!localStorage.getItem(KEYS.quests)) save(KEYS.quests, DEFAULT_QUESTS);
+  if (!localStorage.getItem(KEYS.staff))  save(KEYS.staff,  DEFAULT_STAFF);
   _syncFromFirebase();
-  setTimeout(_listenFirebase, 1500);
+  setTimeout(_listenFirebase, 1000);
 })();
+
+// Helper: รอ Firebase sync เสร็จก่อน (ใช้ใน camper boot)
+function waitForSync(ms = 1500) {
+  return new Promise(r => setTimeout(r, ms));
+}
