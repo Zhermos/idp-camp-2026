@@ -54,6 +54,7 @@
           <div class="nav-item"        data-page="roles"   onclick="navigate('roles')">  <span class="nav-icon">🛡</span><span>Role Management</span></div>
           <div class="nav-item"        data-page="teams"   onclick="navigate('teams')">  <span class="nav-icon">🔴</span><span>จัดการทีม</span></div>
           <div class="nav-item"        data-page="export"  onclick="navigate('export')"> <span class="nav-icon">📊</span><span>Export / Reset</span></div>
+          <div class="nav-item"        data-page="answers" onclick="navigate('answers')"><span class="nav-icon">📝</span><span>คำตอบ TXT</span></div>
           <div class="nav-item"        data-page="qrgen"   onclick="navigate('qrgen')">  <span class="nav-icon">📱</span><span>QR Codes</span></div>
         </div>
         <div class="sidebar-divider"></div>
@@ -134,7 +135,7 @@
                 <input class="form-input" id="qAnswer" placeholder="พิมพ์คำตอบ...">
               </div>
 
-              <!-- จำกัดจำนวน -->
+              <!-- จำกัดจำนวน + เวลาปิด -->
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">จำกัดคนต่อทีม <span style="color:var(--text-shadow);font-size:11px">(ว่าง = ไม่จำกัด)</span></label>
@@ -143,6 +144,10 @@
                 <div class="form-group">
                   <label class="form-label">จำกัดจำนวนทีม <span style="color:var(--text-shadow);font-size:11px">(ว่าง = ไม่จำกัด)</span></label>
                   <input class="form-input" id="qMaxTeams" type="number" placeholder="∞" min="1">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">ปิดรับงานเมื่อ <span style="color:var(--text-shadow);font-size:11px">(ว่าง = ไม่จำกัด)</span></label>
+                  <input class="form-input" id="qCloseAt" type="datetime-local">
                 </div>
               </div>
 
@@ -267,6 +272,32 @@
         </div>
 
         <!-- EXPORT / RESET -->
+        <!-- ANSWERS PAGE -->
+        <div class="page" id="page-answers">
+          <div class="page-header">
+            <h1 class="page-title">📝 คำตอบ TXT</h1>
+            <p class="page-subtitle">ดูคำตอบที่น้องส่งมาแบบ txt ทั้งหมด</p>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">กรองตามภารกิจ</span>
+            </div>
+            <div class="card-body">
+              <select class="form-select" id="answerQuestFilter" onchange="renderAnswersPage()" style="max-width:300px">
+                <option value="">— ทุกภารกิจ —</option>
+              </select>
+            </div>
+          </div>
+          <div class="card mt-16">
+            <div class="card-body" style="padding:0">
+              <table class="data-table">
+                <thead><tr><th>ภารกิจ</th><th>น้อง</th><th>ทีม</th><th>คำตอบ</th><th>เฉลย</th><th>ผล</th><th>เวลา</th></tr></thead>
+                <tbody id="answersTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <div class="page" id="page-export">
           <div class="page-header">
             <h1 class="page-title">📊 Export & Reset</h1>
@@ -401,7 +432,7 @@ function navigate(page) {
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
   document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
-  const map = { quests:renderQuestsPage, roles:renderRolesPage, teams:renderTeamsPage, export:renderExportPage };
+  const map = { quests:renderQuestsPage, roles:renderRolesPage, teams:renderTeamsPage, export:renderExportPage, answers:renderAnswersPage };
   if (map[page]) map[page]();
 }
 
@@ -416,6 +447,12 @@ function renderQuestsPage() {
     const limits = [];
     if (q.maxPerTeam) limits.push(`≤${q.maxPerTeam}/ทีม`);
     if (q.maxTeams)   limits.push(`≤${q.maxTeams}ทีม`);
+    if (q.closeAt) {
+      const cd = new Date(q.closeAt);
+      const now = new Date();
+      const closed = now > cd;
+      limits.push(`${closed?'🔒 ปิดแล้ว':'⏰ ปิด '+cd.toLocaleString('th-TH',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'})}`);
+    }
     return `
     <tr id="qrow-${q.id}">
       <td style="font-size:20px;text-align:center">${q.icon}</td>
@@ -505,12 +542,13 @@ async function createQuest() {
     answer:     evidence === 'txt' ? document.getElementById('qAnswer').value.trim() : '',
     maxPerTeam: maxPerTeamVal ? parseInt(maxPerTeamVal) : null,
     maxTeams:   maxTeamsVal   ? parseInt(maxTeamsVal)   : null,
+    closeAt:    document.getElementById('qCloseAt').value || null,
     mediaUrl,
     mediaType,
     active:     true,
   });
 
-  ['qIcon','qName','qDesc','qPoints','qAnswer','qMaxPerTeam','qMaxTeams'].forEach(id=>document.getElementById(id).value='');
+  ['qIcon','qName','qDesc','qPoints','qAnswer','qMaxPerTeam','qMaxTeams','qCloseAt'].forEach(id=>document.getElementById(id).value='');
   clearQuestMedia();
   document.getElementById('qAnswerGroup').style.display = 'none';
   btn.disabled = false;
@@ -558,6 +596,41 @@ function startTimerPreview() {
 }
 
 // ── ROLES ──────────────────────────
+function renderAnswersPage() {
+  const quests = DB.getQuests().filter(q => q.evidence === 'txt');
+  const filter = document.getElementById('answerQuestFilter');
+  if (filter) {
+    const prev = filter.value;
+    filter.innerHTML = '<option value="">— ทุกภารกิจ —</option>' +
+      quests.map(q => `<option value="${q.id}" ${prev==q.id?'selected':''}>${q.icon} ${q.name}</option>`).join('');
+  }
+  const filterId = filter ? (filter.value ? parseInt(filter.value) : null) : null;
+  const subs = DB.getSubmissions().filter(s => {
+    const q = DB.getQuests().find(x=>x.id===s.questId);
+    return q && q.evidence === 'txt' && (!filterId || s.questId === filterId);
+  }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  const campers = DB.getCampers();
+  const teams   = DB.getTeams();
+  document.getElementById('answersTable').innerHTML = subs.length ? subs.map(s => {
+    const q      = DB.getQuests().find(x=>x.id===s.questId);
+    const camper = campers.find(c=>c.id===s.camperId);
+    const team   = teams.find(t=>t.id===s.teamId);
+    const correct = q?.answer && s.desc?.toLowerCase() === q.answer.toLowerCase();
+    const statusColor = s.status==='approved' ? 'var(--magic-green)' : s.status==='rejected' ? '#f87171' : 'var(--gold)';
+    const statusLabel = s.status==='approved' ? '✅ ถูก' : s.status==='rejected' ? '❌ ผิด' : '⏳ รอ';
+    return `<tr>
+      <td style="font-family:var(--font-title);font-size:12px">${q?.icon||''} ${q?.name||'-'}</td>
+      <td>${camper?.name||'-'}</td>
+      <td style="color:${team?.color}">${team?.name||'-'}</td>
+      <td style="font-family:var(--font-mono);font-size:13px;color:var(--text-parchment)">${s.desc||'-'}</td>
+      <td style="font-family:var(--font-mono);font-size:13px;color:var(--gold)">${q?.answer||'-'}</td>
+      <td style="color:${statusColor};font-weight:700">${statusLabel}</td>
+      <td style="font-size:11px;color:var(--text-shadow)">${new Date(s.createdAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--text-shadow);padding:20px">ยังไม่มีคำตอบ</td></tr>';
+}
+
 function renderRolesPage() {
   const staff = DB.getStaff();
   document.getElementById('staffTable').innerHTML = staff.length ? staff.map(s => `

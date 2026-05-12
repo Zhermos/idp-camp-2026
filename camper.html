@@ -447,7 +447,10 @@ function filterQuests(f, btn) {
 }
 
 function getQuestLimit(q) {
-  // returns { blocked: bool, reason: string }
+  // เช็ค closeAt
+  if (q.closeAt && new Date() > new Date(q.closeAt)) {
+    return { blocked:true, reason:'หมดเวลาแล้ว' };
+  }
   const allSubs = DB.getSubmissions().filter(s=>s.questId===q.id&&s.status==='approved');
   // เช็ค maxPerTeam
   if (q.maxPerTeam) {
@@ -528,6 +531,9 @@ function openSubmit(questId) {
   const isTxt = q.evidence === 'txt';
   document.getElementById('fileUploadGroup').style.display = isTxt ? 'none' : 'block';
   document.getElementById('txtAnswerGroup').style.display  = isTxt ? 'block' : 'none';
+  // ซ่อนช่องอธิบายเพิ่มเติมเมื่อเป็น txt
+  const descGroup = document.getElementById('submissionDesc')?.closest('.form-group');
+  if (descGroup) descGroup.style.display = isTxt ? 'none' : 'block';
 
   document.getElementById('submitModal').classList.add('open');
 }
