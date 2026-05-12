@@ -492,6 +492,7 @@ function renderQuestGrid(filter = currentFilter) {
         ${q.mediaUrl ? (q.mediaType==='video'
           ? `<video src="${q.mediaUrl}" controls style="width:100%;border-radius:8px;margin:8px 0;max-height:160px"></video>`
           : `<img src="${q.mediaUrl}" style="width:100%;border-radius:8px;margin:8px 0;max-height:160px;object-fit:cover">`) : ''}
+        ${q.closeAt ? `<div class="quest-countdown" id="qcd-${q.id}" style="font-family:var(--font-mono);font-size:12px;color:${new Date()>new Date(q.closeAt)?'#f87171':'var(--gold)'};margin:6px 0;text-align:center"></div>` : ''}
         <div class="quest-footer">
           <div class="quest-points">⭐ ${q.points} pt</div>
           <div class="quest-type-tag ${q.type}">${typeLabel[q.type]}</div>
@@ -720,6 +721,23 @@ function refreshActivity() {
 }
 
 // ── COUNTDOWN ─────────────────────
+function updateQuestCountdowns() {
+  document.querySelectorAll('.quest-countdown').forEach(el => {
+    const qId = parseInt(el.id.replace('qcd-',''));
+    const q   = DB.getQuests().find(x=>x.id===qId);
+    if (!q?.closeAt) return;
+    const diff = Math.floor((new Date(q.closeAt) - new Date()) / 1000);
+    if (diff <= 0) {
+      el.textContent = '🔒 หมดเวลาแล้ว';
+      el.style.color = '#f87171';
+    } else {
+      const h = Math.floor(diff/3600), m = Math.floor((diff%3600)/60), s = diff%60;
+      el.textContent = `⏰ เหลือ ${h>0?h+'ชม. ':''}${m}:${String(s).padStart(2,'0')}`;
+      el.style.color = diff < 300 ? '#f87171' : diff < 1800 ? 'var(--gold)' : 'var(--magic-green)';
+    }
+  });
+}
+
 function startCountdown() {
   const el = document.getElementById('countdownTimer');
   const wrap = document.getElementById('headerCountdown');
@@ -734,7 +752,8 @@ function startCountdown() {
     el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   }
   tick();
-  setInterval(tick, 1000);
+  setInterval(() => { tick(); updateQuestCountdowns(); }, 1000);
+  updateQuestCountdowns();
 }
 
 // ── OFFLINE ───────────────────────

@@ -607,7 +607,9 @@ function renderAnswersPage() {
   const filterId = filter ? (filter.value ? parseInt(filter.value) : null) : null;
   const subs = DB.getSubmissions().filter(s => {
     const q = DB.getQuests().find(x=>x.id===s.questId);
-    return q && q.evidence === 'txt' && (!filterId || s.questId === filterId);
+    // รวม: ภารกิจ txt หรือ submission ที่มี autoChecked flag
+    const isTxt = (q && q.evidence === 'txt') || s.evidence === 'txt' || s.autoChecked;
+    return isTxt && (!filterId || s.questId === filterId);
   }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const campers = DB.getCampers();
