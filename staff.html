@@ -391,11 +391,17 @@ function renderReviewQueue() {
           </div>
           <div class="review-time">${new Date(s.createdAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</div>
         </div>
-        <div class="review-media" onclick="showToast('🔍 Media viewer — เชื่อมต่อ backend เพื่อดูไฟล์จริง')">
-          <span style="font-size:28px">${s.hasFile?'🖼️':'📝'}</span>
-          <span>${s.hasFile?'คลิกเพื่อดูหลักฐาน':'ไม่มีไฟล์แนบ'}</span>
+        <div class="review-media">
+          ${s.fileUrl
+            ? (s.fileType === 'video'
+                ? `<video src="${s.fileUrl}" controls style="width:100%;max-height:240px;border-radius:8px;object-fit:contain"></video>`
+                : `<img src="${s.fileUrl}" style="width:100%;max-height:240px;border-radius:8px;object-fit:contain" onclick="window.open('${s.fileUrl}','_blank')">`)
+            : s.evidence === 'txt'
+              ? `<div style="padding:12px;background:var(--bg-block);border-radius:8px;font-size:13px;color:var(--text-parchment)">📝 คำตอบ: <b>${s.desc||'-'}</b>${s.autoChecked?` <span style="color:#f87171;font-size:11px">(ตรวจอัตโนมัติ — ผิด)</span>`:''}</div>`
+              : `<div style="padding:20px;text-align:center;color:var(--text-shadow)">📝 ไม่มีไฟล์แนบ</div>`
+          }
         </div>
-        ${s.desc ? `<div class="review-desc">"${s.desc}"</div>` : ''}
+        ${s.desc && s.evidence !== 'txt' ? `<div class="review-desc">"${s.desc}"</div>` : ''}
         <div class="review-actions">
           <button class="btn-approve" onclick="approve(${s.id})">✅ อนุมัติ +${s.questPoints}pt</button>
           <button class="btn-reject"  onclick="openReject(${s.id},'${(camper?.name||'?').replace(/'/g,"\\'")}')">❌ ตีกลับ</button>

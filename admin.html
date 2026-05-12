@@ -84,10 +84,26 @@
                   <input class="form-input" id="qName" placeholder="ชื่อภารกิจ...">
                 </div>
               </div>
+
               <div class="form-group">
                 <label class="form-label">คำอธิบาย</label>
                 <textarea class="form-textarea" id="qDesc" placeholder="รายละเอียดภารกิจ..." style="min-height:60px"></textarea>
               </div>
+
+              <!-- รูป/วิดีโอประกอบคำอธิบาย -->
+              <div class="form-group">
+                <label class="form-label">รูป/วิดีโอประกอบ (ไม่บังคับ)</label>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <input type="file" id="qMediaFile" accept="image/*,video/*" style="display:none" onchange="previewQuestMedia(this)">
+                  <button class="btn btn-ghost btn-sm" onclick="document.getElementById('qMediaFile').click()">📎 เลือกไฟล์</button>
+                  <span id="qMediaName" style="font-size:12px;color:var(--text-shadow)">ยังไม่ได้เลือก</span>
+                  <button class="btn btn-ghost btn-sm" id="qMediaClearBtn" onclick="clearQuestMedia()" style="display:none">✕ ลบ</button>
+                </div>
+                <div id="qMediaPreview" style="margin-top:8px"></div>
+                <input type="hidden" id="qMediaUrl">
+                <input type="hidden" id="qMediaType">
+              </div>
+
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">คะแนน</label>
@@ -103,14 +119,37 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label">ประเภทหลักฐาน</label>
-                  <select class="form-select" id="qEvidence">
-                    <option value="image">รูปภาพ</option>
-                    <option value="video">วิดีโอ</option>
-                    <option value="both">รูป/วิดีโอ</option>
+                  <select class="form-select" id="qEvidence" onchange="toggleAnswerField()">
+                    <option value="image">📷 รูปภาพ</option>
+                    <option value="video">🎬 วิดีโอ</option>
+                    <option value="both">📷🎬 รูป/วิดีโอ</option>
+                    <option value="txt">📝 ข้อความ (ตรวจอัตโนมัติ)</option>
                   </select>
                 </div>
               </div>
-              <button class="btn btn-primary" onclick="createQuest()">✦ สร้างภารกิจ</button>
+
+              <!-- คำตอบสำหรับ txt -->
+              <div class="form-group" id="qAnswerGroup" style="display:none">
+                <label class="form-label">คำตอบที่ถูกต้อง <span style="color:var(--text-shadow);font-size:11px">(ตรวจอัตโนมัติ ไม่สนตัวพิมพ์ใหญ่/เล็ก)</span></label>
+                <input class="form-input" id="qAnswer" placeholder="พิมพ์คำตอบ...">
+              </div>
+
+              <!-- จำกัดจำนวน -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">จำกัดคนต่อทีม <span style="color:var(--text-shadow);font-size:11px">(ว่าง = ไม่จำกัด)</span></label>
+                  <input class="form-input" id="qMaxPerTeam" type="number" placeholder="∞" min="1">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">จำกัดจำนวนทีม <span style="color:var(--text-shadow);font-size:11px">(ว่าง = ไม่จำกัด)</span></label>
+                  <input class="form-input" id="qMaxTeams" type="number" placeholder="∞" min="1">
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;align-items:center">
+                <button class="btn btn-primary" id="qSubmitBtn" onclick="createQuest()">✦ สร้างภารกิจ</button>
+                <span id="qUploadStatus" style="font-size:12px;color:var(--text-shadow)"></span>
+              </div>
             </div>
           </div>
 
@@ -371,13 +410,23 @@ function renderQuestsPage() {
   const quests = DB.getQuests();
   document.getElementById('questCountLabel').textContent = `${quests.length} ภารกิจ`;
   const typeLabel = {main:'ภารกิจหลัก', side:'ภารกิจรอง', bonus:'โบนัส'};
-  document.getElementById('questsTable').innerHTML = quests.map(q=>`
+  document.getElementById('questsTable').innerHTML = quests.map(q=>{
+    const subs = DB.getSubmissions().filter(s=>s.questId===q.id&&s.status==='approved');
+    const teamsDone = [...new Set(subs.map(s=>s.teamId))].length;
+    const limits = [];
+    if (q.maxPerTeam) limits.push(`≤${q.maxPerTeam}/ทีม`);
+    if (q.maxTeams)   limits.push(`≤${q.maxTeams}ทีม`);
+    return `
     <tr id="qrow-${q.id}">
       <td style="font-size:20px;text-align:center">${q.icon}</td>
-      <td><b style="font-family:var(--font-title);font-size:13px">${q.name}</b></td>
+      <td>
+        <b style="font-family:var(--font-title);font-size:13px">${q.name}</b>
+        ${limits.length ? `<div style="font-size:10px;color:var(--gold-dim);margin-top:2px">${limits.join(' · ')}</div>` : ''}
+        ${q.mediaUrl ? `<div style="font-size:10px;color:var(--magic-green);margin-top:2px">📎 มีสื่อประกอบ</div>` : ''}
+      </td>
       <td><span class="quest-type-tag ${q.type}" style="display:inline">${typeLabel[q.type]}</span></td>
       <td style="font-family:var(--font-mono);color:var(--gold)">${q.points}</td>
-      <td style="font-size:11px;color:var(--text-shadow)">${q.evidence}</td>
+      <td style="font-size:11px;color:var(--text-shadow)">${q.evidence==='txt'?'📝 txt':q.evidence}</td>
       <td>
         <span style="font-size:11px;padding:2px 8px;border-radius:10px;${q.active?'background:rgba(34,197,94,.1);color:var(--magic-green)':'background:rgba(192,57,43,.1);color:#f87171'}">
           ${q.active?'เปิด':'ปิด'}
@@ -387,24 +436,84 @@ function renderQuestsPage() {
         <button class="btn btn-ghost btn-sm" onclick="toggleQuest(${q.id})">${q.active?'ปิด':'เปิด'}</button>
         <button class="btn btn-danger btn-sm" onclick="deleteQuest(${q.id})">ลบ</button>
       </td>
-    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-shadow);padding:20px">ไม่มีภารกิจ</td></tr>';
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-shadow);padding:20px">ไม่มีภารกิจ</td></tr>';
 }
 
-function createQuest() {
+function toggleAnswerField() {
+  const ev = document.getElementById('qEvidence').value;
+  document.getElementById('qAnswerGroup').style.display = ev === 'txt' ? 'block' : 'none';
+}
+
+function previewQuestMedia(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('qMediaName').textContent = file.name;
+  document.getElementById('qMediaClearBtn').style.display = 'inline';
+  const preview = document.getElementById('qMediaPreview');
+  const url = URL.createObjectURL(file);
+  if (file.type.startsWith('image/')) {
+    preview.innerHTML = `<img src="${url}" style="max-height:120px;border-radius:8px;margin-top:4px">`;
+  } else {
+    preview.innerHTML = `<video src="${url}" controls style="max-height:120px;border-radius:8px;margin-top:4px"></video>`;
+  }
+}
+
+function clearQuestMedia() {
+  document.getElementById('qMediaFile').value = '';
+  document.getElementById('qMediaName').textContent = 'ยังไม่ได้เลือก';
+  document.getElementById('qMediaPreview').innerHTML = '';
+  document.getElementById('qMediaUrl').value = '';
+  document.getElementById('qMediaType').value = '';
+  document.getElementById('qMediaClearBtn').style.display = 'none';
+}
+
+async function createQuest() {
   const name = document.getElementById('qName').value.trim();
   const pts  = parseInt(document.getElementById('qPoints').value);
   if (!name || isNaN(pts)) { showToast('กรุณากรอกชื่อและคะแนน','error'); return; }
+
+  const evidence = document.getElementById('qEvidence').value;
+  const maxPerTeamVal = document.getElementById('qMaxPerTeam').value;
+  const maxTeamsVal   = document.getElementById('qMaxTeams').value;
+
+  const btn = document.getElementById('qSubmitBtn');
+  btn.disabled = true;
+
+  // Upload media ถ้ามี
+  let mediaUrl = '', mediaType = '';
+  const mediaFile = document.getElementById('qMediaFile').files[0];
+  if (mediaFile) {
+    document.getElementById('qUploadStatus').textContent = '⏳ กำลังอัปโหลดสื่อ...';
+    await new Promise((resolve, reject) => {
+      DB.uploadFile(mediaFile,
+        p => { document.getElementById('qUploadStatus').textContent = `⏳ ${p}%`; },
+        (url, type) => { mediaUrl = url; mediaType = type; resolve(); },
+        err => { showToast('Upload ล้มเหลว: ' + err, 'error'); reject(err); }
+      );
+    }).catch(() => {});
+    document.getElementById('qUploadStatus').textContent = '';
+  }
+
   DB.addQuest({
-    icon:     document.getElementById('qIcon').value || '⭐',
+    icon:       document.getElementById('qIcon').value || '⭐',
     name,
-    desc:     document.getElementById('qDesc').value.trim(),
-    points:   pts,
-    type:     document.getElementById('qType').value,
-    evidence: document.getElementById('qEvidence').value,
-    active:   true,
+    desc:       document.getElementById('qDesc').value.trim(),
+    points:     pts,
+    type:       document.getElementById('qType').value,
+    evidence,
+    answer:     evidence === 'txt' ? document.getElementById('qAnswer').value.trim() : '',
+    maxPerTeam: maxPerTeamVal ? parseInt(maxPerTeamVal) : null,
+    maxTeams:   maxTeamsVal   ? parseInt(maxTeamsVal)   : null,
+    mediaUrl,
+    mediaType,
+    active:     true,
   });
-  // Clear
-  ['qIcon','qName','qDesc','qPoints'].forEach(id=>document.getElementById(id).value='');
+
+  ['qIcon','qName','qDesc','qPoints','qAnswer','qMaxPerTeam','qMaxTeams'].forEach(id=>document.getElementById(id).value='');
+  clearQuestMedia();
+  document.getElementById('qAnswerGroup').style.display = 'none';
+  btn.disabled = false;
   renderQuestsPage();
   showToast('✦ สร้างภารกิจแล้ว', 'success');
 }

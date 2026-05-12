@@ -190,7 +190,12 @@
     <div class="modal-rune">✦</div>
     <div class="modal-title" id="modalQuestName">ส่งหลักฐาน</div>
     <div class="modal-subtitle" id="modalQuestDesc"></div>
-    <div class="form-group">
+
+    <!-- สื่อประกอบภารกิจ -->
+    <div id="questMediaBlock" style="display:none;margin-bottom:16px;border-radius:var(--r-lg);overflow:hidden"></div>
+
+    <!-- file upload (image/video) -->
+    <div class="form-group" id="fileUploadGroup">
       <label class="form-label">อัปโหลดหลักฐาน</label>
       <div class="upload-area" onclick="document.getElementById('fileInput').click()">
         <div class="upload-icon" id="uploadPreview">📷</div>
@@ -199,13 +204,21 @@
       </div>
       <input type="file" id="fileInput" accept="image/*,video/*" style="display:none" onchange="previewFile(this)">
     </div>
+
+    <!-- txt answer -->
+    <div class="form-group" id="txtAnswerGroup" style="display:none">
+      <label class="form-label">พิมพ์คำตอบ</label>
+      <input class="form-input" id="txtAnswer" placeholder="พิมพ์คำตอบที่นี่...">
+    </div>
+
     <div class="form-group">
       <label class="form-label">คำอธิบายเพิ่มเติม</label>
       <textarea class="form-textarea" id="submissionDesc" placeholder="อธิบายสั้นๆ ว่าทำอะไรไปบ้าง..."></textarea>
     </div>
+    <div id="submitProgress" style="font-size:12px;color:var(--gold);text-align:center;min-height:16px"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="submitWork()">📤 ส่งงาน</button>
+      <button class="btn btn-primary" id="submitWorkBtn" onclick="submitWork()">📤 ส่งงาน</button>
     </div>
   </div>
 </div>
@@ -433,6 +446,24 @@ function filterQuests(f, btn) {
   renderQuestGrid(f);
 }
 
+function getQuestLimit(q) {
+  // returns { blocked: bool, reason: string }
+  const allSubs = DB.getSubmissions().filter(s=>s.questId===q.id&&s.status==='approved');
+  // เช็ค maxPerTeam
+  if (q.maxPerTeam) {
+    const teamCount = allSubs.filter(s=>s.teamId===session.teamId).length;
+    if (teamCount >= q.maxPerTeam) return { blocked:true, reason:`ทีมคุณทำครบ ${q.maxPerTeam} คนแล้ว` };
+  }
+  // เช็ค maxTeams
+  if (q.maxTeams) {
+    const teamsDone = new Set(allSubs.map(s=>s.teamId));
+    if (!teamsDone.has(session.teamId) && teamsDone.size >= q.maxTeams) {
+      return { blocked:true, reason:`เต็มแล้ว (${teamsDone.size}/${q.maxTeams} ทีม)` };
+    }
+  }
+  return { blocked:false, reason:'' };
+}
+
 function renderQuestGrid(filter = currentFilter) {
   const myApproved = new Set(DB.getCamperSubmissions(session.camperId).filter(s=>s.status==='approved').map(s=>s.questId));
   const myPending  = new Set(DB.getCamperSubmissions(session.camperId).filter(s=>s.status==='pending').map(s=>s.questId));
@@ -445,18 +476,24 @@ function renderQuestGrid(filter = currentFilter) {
   document.getElementById('questGrid').innerHTML = quests.map(q => {
     const done    = myApproved.has(q.id);
     const pending = myPending.has(q.id);
+    const limit   = !done && !pending ? getQuestLimit(q) : { blocked:false };
+    const blocked = limit.blocked;
     return `
-      <div class="quest-card ${q.type} ${done?'done':''}">
-        ${done ? '<div class="quest-done-stamp">✅ เสร็จแล้ว</div>' : ''}
+      <div class="quest-card ${q.type} ${done?'done':''}" ${blocked?'style="opacity:.6"':''}>
+        ${done    ? '<div class="quest-done-stamp">✅ เสร็จแล้ว</div>' : ''}
         ${pending ? '<div class="quest-done-stamp" style="background:rgba(74,144,217,.12);color:var(--magic-blue);border-color:rgba(74,144,217,.3);">🔵 รอตรวจ</div>' : ''}
+        ${blocked ? `<div class="quest-done-stamp" style="background:rgba(192,57,43,.1);color:#f87171;border-color:rgba(192,57,43,.3);">🔒 ${limit.reason}</div>` : ''}
         <div class="quest-icon">${q.icon}</div>
         <div class="quest-name">${q.name}</div>
         <div class="quest-desc">${q.desc}</div>
+        ${q.mediaUrl ? (q.mediaType==='video'
+          ? `<video src="${q.mediaUrl}" controls style="width:100%;border-radius:8px;margin:8px 0;max-height:160px"></video>`
+          : `<img src="${q.mediaUrl}" style="width:100%;border-radius:8px;margin:8px 0;max-height:160px;object-fit:cover">`) : ''}
         <div class="quest-footer">
           <div class="quest-points">⭐ ${q.points} pt</div>
           <div class="quest-type-tag ${q.type}">${typeLabel[q.type]}</div>
         </div>
-        ${!done && !pending ? `<button class="quest-submit-btn" onclick="openSubmit(${q.id})">📜 ส่งหลักฐาน</button>` : ''}
+        ${!done && !pending && !blocked ? `<button class="quest-submit-btn" onclick="openSubmit(${q.id})">📜 ส่งหลักฐาน</button>` : ''}
       </div>`;
   }).join('') || '<div style="text-align:center;color:var(--text-shadow);padding:40px;font-size:14px;">ไม่มีภารกิจในหมวดนี้</div>';
 }
@@ -472,6 +509,26 @@ function openSubmit(questId) {
   document.getElementById('uploadText').textContent = 'คลิกเพื่อเลือกรูปหรือวิดีโอ';
   document.getElementById('submissionDesc').value = '';
   document.getElementById('fileInput').value = '';
+  document.getElementById('submitProgress').textContent = '';
+  if (document.getElementById('txtAnswer')) document.getElementById('txtAnswer').value = '';
+
+  // สื่อประกอบภารกิจ
+  const mediaBlock = document.getElementById('questMediaBlock');
+  if (q.mediaUrl) {
+    mediaBlock.style.display = 'block';
+    mediaBlock.innerHTML = q.mediaType === 'video'
+      ? `<video src="${q.mediaUrl}" controls style="width:100%;border-radius:8px;max-height:200px"></video>`
+      : `<img src="${q.mediaUrl}" style="width:100%;border-radius:8px;max-height:200px;object-fit:cover">`;
+  } else {
+    mediaBlock.style.display = 'none';
+    mediaBlock.innerHTML = '';
+  }
+
+  // สลับ UI ตามประเภทหลักฐาน
+  const isTxt = q.evidence === 'txt';
+  document.getElementById('fileUploadGroup').style.display = isTxt ? 'none' : 'block';
+  document.getElementById('txtAnswerGroup').style.display  = isTxt ? 'block' : 'none';
+
   document.getElementById('submitModal').classList.add('open');
 }
 
@@ -488,25 +545,67 @@ function previewFile(input) {
   }
 }
 
-function submitWork() {
+async function submitWork() {
   if (!currentQuestId) return;
-  const q = DB.getQuests().find(x=>x.id===currentQuestId);
+  const q    = DB.getQuests().find(x=>x.id===currentQuestId);
   const team = DB.getTeam(session.teamId);
+  const btn  = document.getElementById('submitWorkBtn');
+  const prog = document.getElementById('submitProgress');
+  btn.disabled = true;
+
+  // ── TXT: ตรวจอัตโนมัติ ──
+  if (q.evidence === 'txt') {
+    const ans = document.getElementById('txtAnswer').value.trim();
+    if (!ans) { showToast('กรุณาพิมพ์คำตอบ', 'error'); btn.disabled=false; return; }
+    const correct = q.answer && ans.toLowerCase() === q.answer.toLowerCase();
+    const sub = DB.addSubmission({
+      questId:    q.id, questName: q.name, questPoints: q.points,
+      camperId:   session.camperId, camperName: session.name, teamId: session.teamId,
+      desc:       ans, evidence: 'txt', autoChecked: true,
+    });
+    if (correct) {
+      // auto approve
+      DB.updateSubmission(sub.id, { status:'approved', points: q.points, autoApproved: true });
+      DB.updateCamperScore(session.camperId, q.points);
+      DB.updateTeamScore(session.teamId, q.points);
+      DB.checkAndAwardBadges(session.camperId);
+      DB.pushActivity(`${team.icon} <b style="color:${team.color}">${session.name}</b> ตอบ "${q.name}" ถูกต้อง! ✅`, session.teamId);
+      closeModal(); renderQuestGrid(); renderSidebar(); renderActivity();
+      showToast('🎉 คำตอบถูกต้อง! +' + q.points + ' pt', 'success');
+    } else {
+      DB.updateSubmission(sub.id, { status:'rejected', autoRejected: true });
+      btn.disabled = false;
+      showToast('❌ คำตอบไม่ถูกต้อง ลองใหม่อีกครั้ง', 'error');
+    }
+    return;
+  }
+
+  // ── FILE: upload ──
+  const file = document.getElementById('fileInput').files?.[0];
+  if (!file) { showToast('กรุณาเลือกไฟล์ก่อน', 'error'); btn.disabled=false; return; }
+
+  prog.textContent = '⏳ กำลังอัปโหลด...';
+  let fileUrl = '', fileType = '';
+  await new Promise((resolve, reject) => {
+    DB.uploadFile(file,
+      p => { prog.textContent = `⏳ อัปโหลด ${p}%`; },
+      (url, type) => { fileUrl = url; fileType = type; resolve(); },
+      err => { showToast('Upload ล้มเหลว: ' + err, 'error'); reject(err); }
+    );
+  }).catch(() => { btn.disabled=false; prog.textContent=''; return; });
+
+  if (!fileUrl) { btn.disabled=false; return; }
+
+  prog.textContent = '';
   DB.addSubmission({
-    questId:    q.id,
-    questName:  q.name,
-    questPoints:q.points,
-    camperId:   session.camperId,
-    camperName: session.name,
-    teamId:     session.teamId,
+    questId:    q.id, questName: q.name, questPoints: q.points,
+    camperId:   session.camperId, camperName: session.name, teamId: session.teamId,
     desc:       document.getElementById('submissionDesc').value,
-    hasFile:    !!document.getElementById('fileInput').files?.[0],
+    fileUrl, fileType, evidence: q.evidence,
   });
   DB.pushActivity(`${team.icon} <b style="color:${team.color}">${session.name}</b> ส่งหลักฐาน "${q.name}"`, session.teamId);
-  closeModal();
-  renderQuestGrid();
-  renderSidebar();
-  renderActivity();
+  btn.disabled = false;
+  closeModal(); renderQuestGrid(); renderSidebar(); renderActivity();
   showToast('📜 ส่งงานเรียบร้อย! รอพี่สต๊าฟตรวจ 🙏', 'success');
 }
 
