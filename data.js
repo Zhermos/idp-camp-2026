@@ -115,11 +115,11 @@ function _emailKey(email) { return email.replace(/\./g, ','); }
 
 // ── Defaults ───────────────────────────────────────────
 const DEFAULT_TEAMS = [
-  { id:'red',    name:'Moira Conclave',     color:'#c0392b', score:0, icon:'🔴', deity:'Hades',    members:[] },
-  { id:'green',  name:'Ares Exiles',        color:'#27ae60', score:0, icon:'🟢', deity:'Athena',   members:[] },
-  { id:'yellow', name:'Promethean Arcanum', color:'#d4a017', score:0, icon:'🟡', deity:'Apollo',   members:[] },
-  { id:'blue',   name:'Hubris Order',       color:'#2980b9', score:0, icon:'🔵', deity:'Poseidon', members:[] },
-  { id:'purple', name:'Hermesian Veil',     color:'#9729b9', score:0, icon:'🟣', deity:'Hermes',   members:[] },
+  { id:'red',    name:'Ares Exiles',     color:'#c0392b', score:0, icon:'🔴', deity:'Ares',    members:[] },
+  { id:'green',  name:'Hermesian Veil',        color:'#27ae60', score:0, icon:'🟢', deity:'Hermesian',   members:[] },
+  { id:'yellow', name:'Hubris Order', color:'#d4a017', score:0, icon:'🟡', deity:'Hubris',   members:[] },
+  { id:'blue',   name:'Promethean Arcanum',       color:'#2980b9', score:0, icon:'🔵', deity:'Promethean', members:[] },
+  { id:'purple', name:'Moira Conclave',     color:'#9729b9', score:0, icon:'🟣', deity:'Moira',   members:[] },
 ];
 
 const DEFAULT_QUESTS = [
@@ -145,9 +145,9 @@ const DEFAULT_BADGES = [
 ];
 
 const DEFAULT_STAFF = [
-  { id:'staff1', name:'พี่เอ็ม', pin:'1111', role:'staff' },
-  { id:'staff2', name:'พี่เบล', pin:'2222', role:'staff' },
-  { id:'admin1', name:'Admin',  pin:'9999', role:'admin' },
+  { id:'staff1', name:'พี่เนธ', pin:'1111', role:'staff' },
+  { id:'staff2', name:'พี่น้ำ', pin:'2222', role:'staff' },
+  { id:'admin1', name:'ปุน',  pin:'9999', role:'admin' },
 ];
 
 const KEYS = {
@@ -312,9 +312,9 @@ const QR = {
 };
 
 (function bootstrap() {
-  if (!localStorage.getItem(KEYS.teams))  save(KEYS.teams,  DEFAULT_TEAMS);
-  if (!localStorage.getItem(KEYS.quests)) save(KEYS.quests, DEFAULT_QUESTS);
-  if (!localStorage.getItem(KEYS.staff))  save(KEYS.staff,  DEFAULT_STAFF);
+  if (load(KEYS.teams, []).length === 0)    save(KEYS.teams,  DEFAULT_TEAMS);
+  if (load(KEYS.quests, []).length === 0)   save(KEYS.quests, DEFAULT_QUESTS);
+  if (load(KEYS.staff, []).length === 0)    save(KEYS.staff,  DEFAULT_STAFF);
   _syncFromFirebase();
   setTimeout(_listenFirebase, 1000);
 })();
