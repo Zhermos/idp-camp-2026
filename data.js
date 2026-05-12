@@ -144,6 +144,12 @@ const DEFAULT_BADGES = [
   { id:'thunder',  emoji:'⚡', name:'เทพ',         desc:'อันดับ 1 ของทีม',         questId:null, condition:'teamRank1' },
 ];
 
+const DEFAULT_STAFF = [
+  { id:'staff1', name:'พี่เอ็ม', pin:'1111', role:'staff' },
+  { id:'staff2', name:'พี่เบล', pin:'2222', role:'staff' },
+  { id:'admin1', name:'Admin',  pin:'9999', role:'admin' },
+];
+
 const KEYS = {
   teams:'idp_teams', quests:'idp_quests', campers:'idp_campers',
   submissions:'idp_submissions', staff:'idp_staff', activities:'idp_activities',
