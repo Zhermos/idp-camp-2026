@@ -375,6 +375,72 @@
 </div>
 
 <!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="editQuestModal">
+  <div class="modal" style="max-width:520px;width:90%">
+    <div class="modal-title">✏️ แก้ไขภารกิจ</div>
+    <input type="hidden" id="editQuestId">
+    <div class="form-row">
+      <div class="form-group" style="flex:.3">
+        <label class="form-label">ไอคอน</label>
+        <input class="form-input" id="editQIcon" maxlength="2" style="text-align:center;font-size:20px">
+      </div>
+      <div class="form-group" style="flex:2">
+        <label class="form-label">ชื่อภารกิจ</label>
+        <input class="form-input" id="editQName">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">คำอธิบาย</label>
+      <textarea class="form-textarea" id="editQDesc" style="min-height:60px"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">คะแนน</label>
+        <input class="form-input" id="editQPoints" type="number" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ประเภท</label>
+        <select class="form-select" id="editQType">
+          <option value="main">⭐ ภารกิจหลัก</option>
+          <option value="side">📌 ภารกิจรอง</option>
+          <option value="bonus">🎁 โบนัส</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">หลักฐาน</label>
+        <select class="form-select" id="editQEvidence" onchange="toggleEditAnswer()">
+          <option value="image">📷 รูปภาพ</option>
+          <option value="video">🎬 วิดีโอ</option>
+          <option value="both">📷🎬 รูป/วิดีโอ</option>
+          <option value="txt">📝 ข้อความ</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group" id="editQAnswerGroup">
+      <label class="form-label">เฉลย</label>
+      <input class="form-input" id="editQAnswer" placeholder="คำตอบที่ถูกต้อง...">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">จำกัดคน/ทีม</label>
+        <input class="form-input" id="editQMaxPerTeam" type="number" placeholder="∞" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">จำกัดทีม</label>
+        <input class="form-input" id="editQMaxTeams" type="number" placeholder="∞" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ปิดรับเมื่อ</label>
+        <input class="form-input" id="editQCloseAt" type="datetime-local">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('editQuestModal').classList.remove('open')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveEditQuest()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="confirmModal">
   <div class="modal">
     <div class="modal-rune">⚠️</div>
@@ -458,6 +524,7 @@ function renderQuestsPage() {
       <td style="font-size:20px;text-align:center">${q.icon}</td>
       <td>
         <b style="font-family:var(--font-title);font-size:13px">${q.name}</b>
+        ${q.answer ? `<div style="font-size:11px;color:var(--gold);margin-top:2px">🔑 เฉลย: <b>${q.answer}</b></div>` : ''}
         ${limits.length ? `<div style="font-size:10px;color:var(--gold-dim);margin-top:2px">${limits.join(' · ')}</div>` : ''}
         ${q.mediaUrl ? `<div style="font-size:10px;color:var(--magic-green);margin-top:2px">📎 มีสื่อประกอบ</div>` : ''}
       </td>
@@ -470,6 +537,7 @@ function renderQuestsPage() {
         </span>
       </td>
       <td style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="editQuest(${q.id})">✏️ แก้</button>
         <button class="btn btn-ghost btn-sm" onclick="toggleQuest(${q.id})">${q.active?'ปิด':'เปิด'}</button>
         <button class="btn btn-danger btn-sm" onclick="deleteQuest(${q.id})">ลบ</button>
       </td>
@@ -554,6 +622,56 @@ async function createQuest() {
   btn.disabled = false;
   renderQuestsPage();
   showToast('✦ สร้างภารกิจแล้ว', 'success');
+}
+
+function editQuest(id) {
+  const q = DB.getQuests().find(x=>x.id===id);
+  if (!q) return;
+  document.getElementById('editQuestId').value      = id;
+  document.getElementById('editQIcon').value        = q.icon||'⭐';
+  document.getElementById('editQName').value        = q.name||'';
+  document.getElementById('editQDesc').value        = q.desc||'';
+  document.getElementById('editQPoints').value      = q.points||0;
+  document.getElementById('editQType').value        = q.type||'main';
+  document.getElementById('editQEvidence').value    = q.evidence||'image';
+  document.getElementById('editQAnswer').value      = q.answer||'';
+  document.getElementById('editQMaxPerTeam').value  = q.maxPerTeam||'';
+  document.getElementById('editQMaxTeams').value    = q.maxTeams||'';
+  document.getElementById('editQCloseAt').value     = q.closeAt||'';
+  toggleEditAnswer();
+  document.getElementById('editQuestModal').classList.add('open');
+}
+
+function toggleEditAnswer() {
+  const ev = document.getElementById('editQEvidence').value;
+  document.getElementById('editQAnswerGroup').style.display = ev==='txt' ? 'block' : 'none';
+}
+
+function saveEditQuest() {
+  const id  = parseInt(document.getElementById('editQuestId').value);
+  const pts = parseInt(document.getElementById('editQPoints').value);
+  const name = document.getElementById('editQName').value.trim();
+  if (!name || isNaN(pts)) { showToast('กรอกชื่อและคะแนน','error'); return; }
+  const evidence = document.getElementById('editQEvidence').value;
+  const maxPT = document.getElementById('editQMaxPerTeam').value;
+  const maxTm = document.getElementById('editQMaxTeams').value;
+  const qs = DB.getQuests();
+  const idx = qs.findIndex(x=>x.id===id);
+  if (idx<0) return;
+  qs[idx] = { ...qs[idx],
+    icon:       document.getElementById('editQIcon').value||'⭐',
+    name, desc: document.getElementById('editQDesc').value.trim(),
+    points: pts, type: document.getElementById('editQType').value,
+    evidence,
+    answer:     evidence==='txt' ? document.getElementById('editQAnswer').value.trim() : qs[idx].answer,
+    maxPerTeam: maxPT ? parseInt(maxPT) : null,
+    maxTeams:   maxTm ? parseInt(maxTm) : null,
+    closeAt:    document.getElementById('editQCloseAt').value||null,
+  };
+  DB.saveQuests(qs);
+  document.getElementById('editQuestModal').classList.remove('open');
+  renderQuestsPage();
+  showToast('💾 บันทึกแล้ว','success');
 }
 
 function toggleQuest(id) {
