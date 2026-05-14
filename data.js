@@ -359,11 +359,35 @@ const CARDS = {
   },
 
   // สร้างการ์ดใหม่ (admin)
-  createCard(ability, points, rarity, note) {
+  createCard(ability, points, rarity, note, usageType) {
     const code = _genCode();
-    const card = { id: 'card_' + nextId(), code, ability, points: points||100, rarity: rarity||'common', note: note||'', usedBy: null, usedAt: null, createdAt: isoNow() };
+    const card = { 
+      id: 'card_' + nextId(), 
+      code, 
+      ability, 
+      points: points||100, 
+      rarity: rarity||'common', 
+      note: note||'', 
+      usageType: usageType||'direct', // 'direct' หรือ 'vote'
+      usedBy: null, 
+      usedAt: null, 
+      createdAt: isoNow() 
+    };
     if (_fbReady && _db) _db.ref('cards/deck/' + card.id).set(card);
     return card;
+  },
+
+  // ลบการ์ด (admin)
+  async deleteCard(cardId) {
+    if (!_fbReady || !_db) return;
+    // อ่านข้อมูลก่อนเพื่อดูว่าใครถืออยู่
+    const snap = await _db.ref('cards/deck/' + cardId).once('value');
+    const card = snap.val();
+    if (card && card.usedBy) {
+      await _db.ref(`cards/hand/${card.usedBy}/${cardId}`).remove();
+    }
+    // ลบจาก deck
+    await _db.ref('cards/deck/' + cardId).remove();
   },
 
   // ดึงการ์ดทั้งหมด (admin)
@@ -549,6 +573,82 @@ const CARDS = {
   // ลบ buff เฉพาะทีม (admin)
   async removeBuff(teamId, buffType) {
     if (_fbReady && _db) await _db.ref(`cards/buffs/${teamId}/${buffType}`).remove();
+  },
+
+  // ── VOTING SYSTEM ────────────────────────────────────
+
+  async startVote(cardId, camperId, camperName, teamId, targetTeamId) {
+    if (!_fbReady || !_db) return { ok:false, msg:'Firebase ไม่พร้อม' };
+    
+    // เช็คว่ามีการโหวตค้างอยู่ไหม
+    const existing = await _db.ref(`cards/votes/${teamId}`).once('value');
+    if (existing.exists()) return { ok:false, msg:'มีการโหวตอื่นกำลังดำเนินการอยู่' };
+
+    const snap = await _db.ref(`cards/hand/${camperId}/${cardId}`).once('value');
+    const card = snap.val();
+    if (!card) return { ok:false, msg:'ไม่พบการ์ดในมือ' };
+
+    const voteId = 'vote_' + Date.now();
+    const vote = {
+      id: voteId,
+      card,
+      camperId,
+      camperName,
+      teamId,
+      targetTeamId: targetTeamId || null,
+      approvals: { [camperId]: true },
+      count: 1,
+      target: 3, // กำหนดไว้ที่ 3 คน (หรือปรับตามเหมาะสม)
+      createdAt: isoNow(),
+      status: 'pending'
+    };
+
+    await _db.ref(`cards/votes/${teamId}/${voteId}`).set(vote);
+    
+    // แจ้งเตือนเพื่อนในทีม
+    await this._pushCardEvent({ 
+      type: 'vote_start', 
+      fromTeamId: teamId, 
+      cardId, 
+      camperName, 
+      msg: `🗳️ ${camperName} ต้องการใช้การ์ด ${CARD_ABILITIES[card.ability]?.name}! ต้องการ 3 โหวต` 
+    });
+
+    return { ok:true, voteId };
+  },
+
+  async approveVote(teamId, voteId, camperId, camperName) {
+    if (!_fbReady || !_db) return;
+    const ref = _db.ref(`cards/votes/${teamId}/${voteId}`);
+    const snap = await ref.once('value');
+    if (!snap.exists()) return;
+    const vote = snap.val();
+    if (vote.status !== 'pending') return;
+    if (vote.approvals[camperId]) return;
+
+    vote.approvals[camperId] = true;
+    vote.count = Object.keys(vote.approvals).length;
+
+    if (vote.count >= vote.target) {
+      vote.status = 'completed';
+      await ref.set(vote);
+      // Execute card!
+      const result = await this.activateCard(vote.card.id, vote.camperId, vote.camperName, vote.teamId, vote.targetTeamId);
+      // ลบโหวตหลังจากสำเร็จ (หรือเก็บไว้ซักพัก)
+      setTimeout(() => ref.remove(), 2000);
+      return { status: 'completed', result };
+    } else {
+      await ref.set(vote);
+      return { status: 'pending', count: vote.count };
+    }
+  },
+
+  listenVotes(teamId, callback) {
+    if (!_fbReady || !_db) return;
+    _db.ref(`cards/votes/${teamId}`).on('value', snap => {
+      const votes = snap.val() ? Object.values(snap.val()) : [];
+      callback(votes[0] || null); // สมมติว่ามีแค่ 1 vote ในเวลาเดียวกัน
+    });
   },
 };
 

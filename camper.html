@@ -139,6 +139,18 @@
           </div>
         </div>
 
+        <!-- Active Vote Banner -->
+        <div id="activeVoteBanner" class="card mt-16" style="display:none; border:2px solid var(--gold); box-shadow:0 0 15px rgba(228,190,110,0.3)">
+          <div class="card-body" style="display:flex; align-items:center; gap:16px">
+            <div style="font-size:32px" id="voteIcon">🗳️</div>
+            <div style="flex:1">
+              <div style="font-family:var(--font-title); font-size:14px; color:var(--gold-bright)" id="voteTitle">ทีมกำลังโหวตใช้การ์ด...</div>
+              <div style="font-size:12px; color:var(--text-shadow)" id="voteDesc">ต้องการอีก 2 โหวต เพื่อเปิดใช้งาน</div>
+            </div>
+            <button class="btn btn-primary btn-sm" id="voteBtn" onclick="approveCurrentVote()">👍 โหวต</button>
+          </div>
+        </div>
+
         <!-- My Cards -->
         <div class="card mt-16">
           <div class="card-header"><span class="card-title">🃏 การ์ดในมือ</span><button class="btn btn-ghost btn-sm" onclick="renderArmory()">🔄</button></div>
@@ -437,6 +449,8 @@ async function camperLogout() {
   location.reload();
 }
 
+let _currentVote = null;
+
 function showApp() {
   document.getElementById('appWrap').style.display = 'flex';
   renderHeader();
@@ -446,6 +460,7 @@ function showApp() {
   document.getElementById('sidebarQuote').textContent = QUOTES[Math.floor(Math.random()*QUOTES.length)];
   // Card system
   initCardListener();
+  initVoteListener();
   CARDS.getCamperCards(session.camperId).then(cards => {
     const badge = document.getElementById('armoryBadge');
     if (badge) { badge.textContent = cards.length; badge.style.display = cards.length ? 'inline' : 'none'; }
@@ -738,17 +753,65 @@ async function confirmActivate() {
   btn.disabled = true;
   const ab = CARD_ABILITIES[_activatingCard.ability];
   const targetTeamId = ab?.needsTarget ? document.getElementById('targetTeamSelect').value : null;
-  const result = await CARDS.activateCard(_activatingCard.id, session.camperId, session.name, session.teamId, targetTeamId);
-  if (result.ok) {
-    document.getElementById('activateModal').classList.remove('open');
-    renderArmory();
-    showToast('🎴 ' + result.msg, 'success');
+
+  if (_activatingCard.usageType === 'vote') {
+    const result = await CARDS.startVote(_activatingCard.id, session.camperId, session.name, session.teamId, targetTeamId);
+    if (result.ok) {
+      document.getElementById('activateModal').classList.remove('open');
+      showToast('🗳️ เริ่มการโหวตทีมแล้ว! รอเพื่อนโหวตครบ 3 คน', 'success');
+    } else {
+      document.getElementById('activateMsg').textContent = '❌ ' + result.msg;
+      document.getElementById('activateMsg').style.color = '#f87171';
+    }
   } else {
-    document.getElementById('activateMsg').textContent = '❌ ' + result.msg;
-    document.getElementById('activateMsg').style.color = '#f87171';
+    const result = await CARDS.activateCard(_activatingCard.id, session.camperId, session.name, session.teamId, targetTeamId);
+    if (result.ok) {
+      document.getElementById('activateModal').classList.remove('open');
+      renderArmory();
+      showToast('🎴 ' + result.msg, 'success');
+    } else {
+      document.getElementById('activateMsg').textContent = '❌ ' + result.msg;
+      document.getElementById('activateMsg').style.color = '#f87171';
+    }
   }
   btn.disabled = false;
   _activatingCard = null;
+}
+
+function initVoteListener() {
+  CARDS.listenVotes(session.teamId, vote => {
+    _currentVote = vote;
+    renderVoteBanner();
+  });
+}
+
+function renderVoteBanner() {
+  const el = document.getElementById('activeVoteBanner');
+  if (!_currentVote) { el.style.display = 'none'; return; }
+  
+  el.style.display = 'block';
+  const ab = CARD_ABILITIES[_currentVote.card.ability];
+  document.getElementById('voteIcon').textContent = ab?.icon || '🗳️';
+  document.getElementById('voteTitle').textContent = `${_currentVote.camperName} ต้องการใช้ ${ab?.name}`;
+  
+  const remaining = Math.max(0, _currentVote.target - _currentVote.count);
+  document.getElementById('voteDesc').textContent = remaining > 0 ? `ต้องการอีก ${remaining} โหวต เพื่อเปิดใช้งาน` : 'โหวตครบแล้ว! กำลังประมวลผล...';
+  
+  const btn = document.getElementById('voteBtn');
+  const alreadyApproved = _currentVote.approvals && _currentVote.approvals[session.camperId];
+  if (alreadyApproved) {
+    btn.disabled = true;
+    btn.textContent = '✅ โหวตแล้ว';
+  } else {
+    btn.disabled = false;
+    btn.textContent = '👍 โหวต';
+  }
+}
+
+async function approveCurrentVote() {
+  if (!_currentVote) return;
+  await CARDS.approveVote(session.teamId, _currentVote.id, session.camperId, session.name);
+  showToast('👍 ส่งคะแนนโหวตแล้ว');
 }
 
 async function redeemCard() {

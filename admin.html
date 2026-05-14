@@ -349,6 +349,13 @@
                   <input class="form-input" id="cardPoints" type="number" value="100" min="0">
                 </div>
                 <div class="form-group">
+                  <label class="form-label">ประเภทการใช้งาน</label>
+                  <select class="form-select" id="cardUsageType">
+                    <option value="direct">🏃 ใช้เองได้เลย</option>
+                    <option value="vote">🗳️ ต้องโหวตรวมใช้</option>
+                  </select>
+                </div>
+                <div class="form-group">
                   <label class="form-label">จำนวนการ์ด</label>
                   <input class="form-input" id="cardQty" type="number" value="1" min="1" max="20">
                 </div>
@@ -377,8 +384,8 @@
             </div>
             <div class="card-body" style="padding:0">
               <table class="data-table">
-                <thead><tr><th>Code</th><th>Ability</th><th>Rarity</th><th>คะแนน</th><th>สถานะ</th><th>เวลา</th></tr></thead>
-                <tbody id="cardsTable"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-shadow)">กด Refresh เพื่อโหลด</td></tr></tbody>
+                <thead><tr><th>Code</th><th>Ability</th><th>Rarity</th><th>คะแนน</th><th>ประเภท</th><th>สถานะ</th><th>เวลา</th><th>จัดการ</th></tr></thead>
+                <tbody id="cardsTable"><tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-shadow)">กด Refresh เพื่อโหลด</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -599,14 +606,15 @@ async function removeBuff(teamId, type) {
 }
 
 async function generateCards() {
-  const ability = document.getElementById('cardAbility').value;
-  const rarity  = document.getElementById('cardRarity').value;
-  const points  = parseInt(document.getElementById('cardPoints').value) || 100;
-  const qty     = Math.min(20, parseInt(document.getElementById('cardQty').value) || 1);
-  const note    = document.getElementById('cardNote').value.trim();
+  const ability   = document.getElementById('cardAbility').value;
+  const rarity    = document.getElementById('cardRarity').value;
+  const usageType = document.getElementById('cardUsageType').value;
+  const points    = parseInt(document.getElementById('cardPoints').value) || 100;
+  const qty       = Math.min(20, parseInt(document.getElementById('cardQty').value) || 1);
+  const note      = document.getElementById('cardNote').value.trim();
 
   const cards = [];
-  for (let i=0; i<qty; i++) cards.push(await CARDS.createCard(ability, points, rarity, note));
+  for (let i=0; i<qty; i++) cards.push(await CARDS.createCard(ability, points, rarity, note, usageType));
 
   // แสดงการ์ดที่สร้าง
   const ab = CARD_ABILITIES[ability];
@@ -619,6 +627,7 @@ async function generateCards() {
       <div style="font-size:32px;margin:8px 0">${ab.icon}</div>
       <div style="font-family:var(--font-title);font-size:13px;color:var(--gold-bright);letter-spacing:1px">${ab.name}</div>
       <div style="font-size:11px;color:var(--text-shadow);margin:6px 0">${ab.desc}</div>
+      <div style="font-size:10px;color:var(--gold);margin-bottom:4px">${usageType === 'vote' ? '🗳️ โหวตทีม' : '🏃 ใช้ทันที'}</div>
       ${points && (ability==='steal'||ability==='freeze') ? `<div style="font-family:var(--font-mono);font-size:14px;color:var(--gold);margin:4px 0">${points} pt</div>` : ''}
       <div style="font-family:var(--font-mono);font-size:18px;letter-spacing:4px;color:var(--gold-bright);margin-top:8px;padding:6px;background:var(--bg-block);border-radius:6px">${card.code}</div>
       ${note ? `<div style="font-size:10px;color:var(--text-shadow);margin-top:4px">${note}</div>` : ''}
@@ -629,6 +638,13 @@ async function generateCards() {
 }
 
 function printCards() { window.print(); }
+
+async function deleteCardUI(cardId) {
+  if (!confirm('ยืนยันการลบการ์ดใบนี้?')) return;
+  await CARDS.deleteCard(cardId);
+  showToast('🗑️ ลบการ์ดแล้ว');
+  renderCardsList();
+}
 
 async function renderCardsList() {
   const cards = await CARDS.getAllCards();
@@ -642,10 +658,12 @@ async function renderCardsList() {
       <td>${ab?.icon||''} ${ab?.name||c.ability}</td>
       <td style="color:${ra[c.rarity]?.color||'#fff'}">${ra[c.rarity]?.label||c.rarity}</td>
       <td style="font-family:var(--font-mono);color:var(--gold)">${c.points}</td>
+      <td style="font-size:12px">${c.usageType === 'vote' ? '🗳️ โหวต' : '🏃 ทันที'}</td>
       <td style="color:${c.usedBy?'#f87171':'var(--magic-green)'}">${c.usedBy?'✅ ใช้แล้ว':'⭕ ว่าง'}</td>
       <td style="font-size:11px;color:var(--text-shadow)">${new Date(c.createdAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</td>
+      <td><button class="btn btn-ghost btn-sm" style="color:#ef4444" onclick="deleteCardUI('${c.id}')">ลบ</button></td>
     </tr>`;
-  }).join('') : '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-shadow)">ยังไม่มีการ์ด</td></tr>';
+  }).join('') : '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-shadow)">ยังไม่มีการ์ด</td></tr>';
 }
 
 async function renderEventLog() {
