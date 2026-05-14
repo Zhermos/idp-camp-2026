@@ -785,17 +785,37 @@ function initVoteListener() {
   });
 }
 
+let _voteTimer = null;
+
 function renderVoteBanner() {
   const el = document.getElementById('activeVoteBanner');
-  if (!_currentVote) { el.style.display = 'none'; return; }
+  if (!_currentVote) { 
+    el.style.display = 'none'; 
+    if (_voteTimer) { clearInterval(_voteTimer); _voteTimer = null; }
+    return; 
+  }
   
   el.style.display = 'block';
   const ab = CARD_ABILITIES[_currentVote.card.ability];
   document.getElementById('voteIcon').textContent = ab?.icon || '🗳️';
   document.getElementById('voteTitle').textContent = `${_currentVote.camperName} ต้องการใช้ ${ab?.name}`;
   
-  const remaining = Math.max(0, _currentVote.target - _currentVote.count);
-  document.getElementById('voteDesc').textContent = remaining > 0 ? `ต้องการอีก ${remaining} โหวต เพื่อเปิดใช้งาน` : 'โหวตครบแล้ว! กำลังประมวลผล...';
+  if (!_voteTimer) {
+    _voteTimer = setInterval(() => {
+      if (!_currentVote) { clearInterval(_voteTimer); _voteTimer = null; return; }
+      const diff = _currentVote.expiresAt - Date.now();
+      if (diff <= 0) {
+        document.getElementById('voteDesc').textContent = '❌ หมดเวลาโหวต';
+        clearInterval(_voteTimer);
+        _voteTimer = null;
+        return;
+      }
+      const m = Math.floor(diff / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      const remaining = Math.max(0, _currentVote.target - _currentVote.count);
+      document.getElementById('voteDesc').textContent = `ต้องการอีก ${remaining} โหวต · ⏳ ${m}:${String(s).padStart(2,'0')}`;
+    }, 1000);
+  }
   
   const btn = document.getElementById('voteBtn');
   const alreadyApproved = _currentVote.approvals && _currentVote.approvals[session.camperId];

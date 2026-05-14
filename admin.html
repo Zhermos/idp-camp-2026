@@ -298,24 +298,47 @@
         <!-- CARDS PAGE -->
         <div class="page" id="page-cards">
           <div class="page-header">
-            <h1 class="page-title">🎴 The Tartarus Deck</h1>
-            <p class="page-subtitle">สร้างและจัดการการ์ดพลังพิเศษ</p>
+            <div>
+              <h1 class="page-title">🎴 The Tartarus Deck</h1>
+              <p class="page-subtitle">สร้างและจัดการการ์ดพลังพิเศษ</p>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="renderCardsPage()">🔄 รีเฟรชทั้งหมด</button>
           </div>
 
-          <!-- Master Switch -->
-          <div class="card" style="border-color:var(--border-gold)">
-            <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
-              <div>
-                <div style="font-family:var(--font-title);font-size:16px;color:var(--gold-bright)">⚡ Master Switch</div>
-                <div style="font-size:12px;color:var(--text-shadow);margin-top:4px">เปิด/ปิดระบบการ์ดทั้งค่าย</div>
+          <div class="grid-2">
+            <!-- Master Switch -->
+            <div class="card" style="border-color:var(--border-gold)">
+              <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+                <div>
+                  <div style="font-family:var(--font-title);font-size:16px;color:var(--gold-bright)">⚡ Master Switch</div>
+                  <div style="font-size:12px;color:var(--text-shadow);margin-top:4px">เปิด/ปิดระบบการ์ดทั้งค่าย</div>
+                </div>
+                <button id="masterSwitchBtn" class="btn btn-primary" onclick="toggleMaster()" style="min-width:120px">กำลังโหลด...</button>
               </div>
-              <button id="masterSwitchBtn" class="btn btn-primary" onclick="toggleMaster()" style="min-width:120px">กำลังโหลด...</button>
+            </div>
+
+            <!-- Vote Configuration -->
+            <div class="card" style="border-color:var(--border-gold)">
+              <div class="card-body">
+                <div style="font-family:var(--font-title);font-size:16px;color:var(--gold-bright);margin-bottom:8px">🗳️ Vote Settings</div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">จำนวนโหวตที่ต้องการ</label>
+                    <input class="form-input" id="voteTarget" type="number" min="1" value="3">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">เวลาโหวต (นาที)</label>
+                    <input class="form-input" id="voteTimeout" type="number" min="1" value="5">
+                  </div>
+                </div>
+                <button class="btn btn-primary btn-sm mt-8" onclick="saveVoteConfig()">💾 บันทึกตั้งค่าโหวต</button>
+              </div>
             </div>
           </div>
 
           <!-- Buff Status -->
           <div class="card mt-16">
-            <div class="card-header"><span class="card-title">🧿 สถานะ Buff/Debuff ปัจจุบัน</span><button class="btn btn-ghost btn-sm" onclick="renderCardsPage()">🔄</button></div>
+            <div class="card-header"><span class="card-title">🧿 สถานะ Buff/Debuff ปัจจุบัน</span></div>
             <div class="card-body" id="buffStatus" style="display:flex;flex-wrap:wrap;gap:10px">
               <div style="color:var(--text-shadow);font-size:13px">กำลังโหลด...</div>
             </div>
@@ -380,12 +403,11 @@
           <div class="card mt-16">
             <div class="card-header">
               <span class="card-title">📋 การ์ดทั้งหมด</span>
-              <button class="btn btn-ghost btn-sm" onclick="renderCardsList()">🔄 Refresh</button>
             </div>
             <div class="card-body" style="padding:0">
               <table class="data-table">
                 <thead><tr><th>Code</th><th>Ability</th><th>Rarity</th><th>คะแนน</th><th>ประเภท</th><th>สถานะ</th><th>เวลา</th><th>จัดการ</th></tr></thead>
-                <tbody id="cardsTable"><tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-shadow)">กด Refresh เพื่อโหลด</td></tr></tbody>
+                <tbody id="cardsTable"><tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-shadow)">กดรีเฟรชเพื่อโหลด</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -394,12 +416,11 @@
           <div class="card mt-16">
             <div class="card-header">
               <span class="card-title">📜 Card Event Log</span>
-              <button class="btn btn-ghost btn-sm" onclick="renderEventLog()">🔄 Refresh</button>
             </div>
             <div class="card-body" style="padding:0">
               <table class="data-table">
                 <thead><tr><th>Event</th><th>จาก</th><th>เป้า</th><th>รายละเอียด</th><th>เวลา</th></tr></thead>
-                <tbody id="cardEventLog"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-shadow)">กด Refresh เพื่อโหลด</td></tr></tbody>
+                <tbody id="cardEventLog"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-shadow)">กดรีเฟรชเพื่อโหลด</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -569,13 +590,26 @@ async function renderCardsPage() {
     _masterOn = on;
     const btn = document.getElementById('masterSwitchBtn');
     if (btn) {
-      btn.textContent = on ? '🟢 เปิดอยู่ — กดปิด' : '🔴 ปิดอยู่ — กดเปิด';
-      btn.style.background = on ? 'rgba(34,197,94,.15)' : 'rgba(192,57,43,.15)';
+      btn.textContent = on ? '🛑 ปิดระบบ' : '⚡ เปิดระบบ';
+      btn.className = on ? 'btn btn-danger' : 'btn btn-primary';
     }
   });
+  
+  // Load vote config
+  const config = await CARDS.getVoteConfig();
+  document.getElementById('voteTarget').value = config.target;
+  document.getElementById('voteTimeout').value = config.timeout;
+
   renderBuffStatus();
   renderCardsList();
   renderEventLog();
+}
+
+async function saveVoteConfig() {
+  const target = parseInt(document.getElementById('voteTarget').value) || 3;
+  const timeout = parseInt(document.getElementById('voteTimeout').value) || 5;
+  await CARDS.setVoteConfig({ target, timeout });
+  showToast('🗳️ บันทึกตั้งค่าโหวตแล้ว', 'success');
 }
 
 async function toggleMaster() {
