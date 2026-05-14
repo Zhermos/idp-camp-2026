@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TARTARUS — Admin</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="data.js"></script>
 </head>
 <body>
@@ -54,8 +54,8 @@
           <div class="nav-item"        data-page="roles"   onclick="navigate('roles')">  <span class="nav-icon">🛡</span><span>Role Management</span></div>
           <div class="nav-item"        data-page="teams"   onclick="navigate('teams')">  <span class="nav-icon">🔴</span><span>จัดการทีม</span></div>
           <div class="nav-item"        data-page="export"  onclick="navigate('export')"> <span class="nav-icon">📊</span><span>Export / Reset</span></div>
-          <div class="nav-item"        data-page="answers" onclick="navigate('answers')"><span class="nav-icon">📝</span><span>คำตอบ TXT</span></div>
           <div class="nav-item"        data-page="qrgen"   onclick="navigate('qrgen')">  <span class="nav-icon">📱</span><span>QR Codes</span></div>
+          <div class="nav-item"        data-page="cards"   onclick="navigate('cards')">  <span class="nav-icon">🎴</span><span>การ์ดพลัง</span></div>
         </div>
         <div class="sidebar-divider"></div>
         <div class="sidebar-section"><div class="sidebar-section-label">คะแนนทีม</div></div>
@@ -85,26 +85,10 @@
                   <input class="form-input" id="qName" placeholder="ชื่อภารกิจ...">
                 </div>
               </div>
-
               <div class="form-group">
                 <label class="form-label">คำอธิบาย</label>
                 <textarea class="form-textarea" id="qDesc" placeholder="รายละเอียดภารกิจ..." style="min-height:60px"></textarea>
               </div>
-
-              <!-- รูป/วิดีโอประกอบคำอธิบาย -->
-              <div class="form-group">
-                <label class="form-label">รูป/วิดีโอประกอบ (ไม่บังคับ)</label>
-                <div style="display:flex;gap:10px;align-items:center">
-                  <input type="file" id="qMediaFile" accept="image/*,video/*" style="display:none" onchange="previewQuestMedia(this)">
-                  <button class="btn btn-ghost btn-sm" onclick="document.getElementById('qMediaFile').click()">📎 เลือกไฟล์</button>
-                  <span id="qMediaName" style="font-size:12px;color:var(--text-shadow)">ยังไม่ได้เลือก</span>
-                  <button class="btn btn-ghost btn-sm" id="qMediaClearBtn" onclick="clearQuestMedia()" style="display:none">✕ ลบ</button>
-                </div>
-                <div id="qMediaPreview" style="margin-top:8px"></div>
-                <input type="hidden" id="qMediaUrl">
-                <input type="hidden" id="qMediaType">
-              </div>
-
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label">คะแนน</label>
@@ -120,41 +104,14 @@
                 </div>
                 <div class="form-group">
                   <label class="form-label">ประเภทหลักฐาน</label>
-                  <select class="form-select" id="qEvidence" onchange="toggleAnswerField()">
-                    <option value="image">📷 รูปภาพ</option>
-                    <option value="video">🎬 วิดีโอ</option>
-                    <option value="both">📷🎬 รูป/วิดีโอ</option>
-                    <option value="txt">📝 ข้อความ (ตรวจอัตโนมัติ)</option>
+                  <select class="form-select" id="qEvidence">
+                    <option value="image">รูปภาพ</option>
+                    <option value="video">วิดีโอ</option>
+                    <option value="both">รูป/วิดีโอ</option>
                   </select>
                 </div>
               </div>
-
-              <!-- คำตอบสำหรับ txt -->
-              <div class="form-group" id="qAnswerGroup" style="display:none">
-                <label class="form-label">คำตอบที่ถูกต้อง <span style="color:var(--text-shadow);font-size:11px">(ตรวจอัตโนมัติ ไม่สนตัวพิมพ์ใหญ่/เล็ก)</span></label>
-                <input class="form-input" id="qAnswer" placeholder="พิมพ์คำตอบ...">
-              </div>
-
-              <!-- จำกัดจำนวน + เวลาปิด -->
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label">จำกัดคนต่อทีม <span style="color:var(--text-shadow);font-size:11px">(ว่าง = ไม่จำกัด)</span></label>
-                  <input class="form-input" id="qMaxPerTeam" type="number" placeholder="∞" min="1">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">จำกัดจำนวนทีม <span style="color:var(--text-shadow);font-size:11px">(ว่าง = ไม่จำกัด)</span></label>
-                  <input class="form-input" id="qMaxTeams" type="number" placeholder="∞" min="1">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">ปิดรับงานเมื่อ <span style="color:var(--text-shadow);font-size:11px">(ว่าง = ไม่จำกัด)</span></label>
-                  <input class="form-input" id="qCloseAt" type="datetime-local">
-                </div>
-              </div>
-
-              <div style="display:flex;gap:10px;align-items:center">
-                <button class="btn btn-primary" id="qSubmitBtn" onclick="createQuest()">✦ สร้างภารกิจ</button>
-                <span id="qUploadStatus" style="font-size:12px;color:var(--text-shadow)"></span>
-              </div>
+              <button class="btn btn-primary" onclick="createQuest()">✦ สร้างภารกิจ</button>
             </div>
           </div>
 
@@ -272,32 +229,6 @@
         </div>
 
         <!-- EXPORT / RESET -->
-        <!-- ANSWERS PAGE -->
-        <div class="page" id="page-answers">
-          <div class="page-header">
-            <h1 class="page-title">📝 คำตอบ TXT</h1>
-            <p class="page-subtitle">ดูคำตอบที่น้องส่งมาแบบ txt ทั้งหมด</p>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">กรองตามภารกิจ</span>
-            </div>
-            <div class="card-body">
-              <select class="form-select" id="answerQuestFilter" onchange="renderAnswersPage()" style="max-width:300px">
-                <option value="">— ทุกภารกิจ —</option>
-              </select>
-            </div>
-          </div>
-          <div class="card mt-16">
-            <div class="card-body" style="padding:0">
-              <table class="data-table">
-                <thead><tr><th>ภารกิจ</th><th>น้อง</th><th>ทีม</th><th>คำตอบ</th><th>เฉลย</th><th>ผล</th><th>เวลา</th></tr></thead>
-                <tbody id="answersTable"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
         <div class="page" id="page-export">
           <div class="page-header">
             <h1 class="page-title">📊 Export & Reset</h1>
@@ -364,6 +295,109 @@
           </div>
         </div>
 
+        <!-- CARDS PAGE -->
+        <div class="page" id="page-cards">
+          <div class="page-header">
+            <h1 class="page-title">🎴 The Tartarus Deck</h1>
+            <p class="page-subtitle">สร้างและจัดการการ์ดพลังพิเศษ</p>
+          </div>
+
+          <!-- Master Switch -->
+          <div class="card" style="border-color:var(--border-gold)">
+            <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+              <div>
+                <div style="font-family:var(--font-title);font-size:16px;color:var(--gold-bright)">⚡ Master Switch</div>
+                <div style="font-size:12px;color:var(--text-shadow);margin-top:4px">เปิด/ปิดระบบการ์ดทั้งค่าย</div>
+              </div>
+              <button id="masterSwitchBtn" class="btn btn-primary" onclick="toggleMaster()" style="min-width:120px">กำลังโหลด...</button>
+            </div>
+          </div>
+
+          <!-- Buff Status -->
+          <div class="card mt-16">
+            <div class="card-header"><span class="card-title">🧿 สถานะ Buff/Debuff ปัจจุบัน</span><button class="btn btn-ghost btn-sm" onclick="renderCardsPage()">🔄</button></div>
+            <div class="card-body" id="buffStatus" style="display:flex;flex-wrap:wrap;gap:10px">
+              <div style="color:var(--text-shadow);font-size:13px">กำลังโหลด...</div>
+            </div>
+          </div>
+
+          <!-- Card Generator -->
+          <div class="card mt-16">
+            <div class="card-header"><span class="card-title">✦ สร้างการ์ดใหม่</span></div>
+            <div class="card-body">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Ability</label>
+                  <select class="form-select" id="cardAbility">
+                    <option value="steal">⚡ Steal</option>
+                    <option value="aegis">🛡️ Aegis Shield</option>
+                    <option value="reflect">🔄 Reflect</option>
+                    <option value="multiplier">🔥 Multiplier</option>
+                    <option value="freeze">❄️ Freeze</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Rarity</label>
+                  <select class="form-select" id="cardRarity">
+                    <option value="common">⚪ Common</option>
+                    <option value="rare">🔵 Rare</option>
+                    <option value="legendary">🟡 Legendary</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">คะแนน (Steal/Freeze)</label>
+                  <input class="form-input" id="cardPoints" type="number" value="100" min="0">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">จำนวนการ์ด</label>
+                  <input class="form-input" id="cardQty" type="number" value="1" min="1" max="20">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Note (ไม่บังคับ)</label>
+                <input class="form-input" id="cardNote" placeholder="เช่น สำหรับทีมแดง...">
+              </div>
+              <button class="btn btn-primary" onclick="generateCards()">🎴 สร้างการ์ด</button>
+            </div>
+          </div>
+
+          <!-- Generated Cards -->
+          <div class="card mt-16" id="generatedCardsCard" style="display:none">
+            <div class="card-header"><span class="card-title" id="generatedCardsTitle">การ์ดที่สร้างใหม่</span><button class="btn btn-ghost btn-sm" onclick="printCards()">🖨️ Print</button></div>
+            <div class="card-body">
+              <div id="generatedCardsList" style="display:flex;flex-wrap:wrap;gap:12px"></div>
+            </div>
+          </div>
+
+          <!-- All Cards List -->
+          <div class="card mt-16">
+            <div class="card-header">
+              <span class="card-title">📋 การ์ดทั้งหมด</span>
+              <button class="btn btn-ghost btn-sm" onclick="renderCardsList()">🔄 Refresh</button>
+            </div>
+            <div class="card-body" style="padding:0">
+              <table class="data-table">
+                <thead><tr><th>Code</th><th>Ability</th><th>Rarity</th><th>คะแนน</th><th>สถานะ</th><th>เวลา</th></tr></thead>
+                <tbody id="cardsTable"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-shadow)">กด Refresh เพื่อโหลด</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Event Log -->
+          <div class="card mt-16">
+            <div class="card-header">
+              <span class="card-title">📜 Card Event Log</span>
+              <button class="btn btn-ghost btn-sm" onclick="renderEventLog()">🔄 Refresh</button>
+            </div>
+            <div class="card-body" style="padding:0">
+              <table class="data-table">
+                <thead><tr><th>Event</th><th>จาก</th><th>เป้า</th><th>รายละเอียด</th><th>เวลา</th></tr></thead>
+                <tbody id="cardEventLog"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-shadow)">กด Refresh เพื่อโหลด</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </main>
 
       <aside class="activity-panel">
@@ -375,72 +409,6 @@
 </div>
 
 <!-- CONFIRM MODAL -->
-<div class="modal-overlay" id="editQuestModal">
-  <div class="modal" style="max-width:520px;width:90%">
-    <div class="modal-title">✏️ แก้ไขภารกิจ</div>
-    <input type="hidden" id="editQuestId">
-    <div class="form-row">
-      <div class="form-group" style="flex:.3">
-        <label class="form-label">ไอคอน</label>
-        <input class="form-input" id="editQIcon" maxlength="2" style="text-align:center;font-size:20px">
-      </div>
-      <div class="form-group" style="flex:2">
-        <label class="form-label">ชื่อภารกิจ</label>
-        <input class="form-input" id="editQName">
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">คำอธิบาย</label>
-      <textarea class="form-textarea" id="editQDesc" style="min-height:60px"></textarea>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">คะแนน</label>
-        <input class="form-input" id="editQPoints" type="number" min="0">
-      </div>
-      <div class="form-group">
-        <label class="form-label">ประเภท</label>
-        <select class="form-select" id="editQType">
-          <option value="main">⭐ ภารกิจหลัก</option>
-          <option value="side">📌 ภารกิจรอง</option>
-          <option value="bonus">🎁 โบนัส</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">หลักฐาน</label>
-        <select class="form-select" id="editQEvidence" onchange="toggleEditAnswer()">
-          <option value="image">📷 รูปภาพ</option>
-          <option value="video">🎬 วิดีโอ</option>
-          <option value="both">📷🎬 รูป/วิดีโอ</option>
-          <option value="txt">📝 ข้อความ</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group" id="editQAnswerGroup">
-      <label class="form-label">เฉลย</label>
-      <input class="form-input" id="editQAnswer" placeholder="คำตอบที่ถูกต้อง...">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">จำกัดคน/ทีม</label>
-        <input class="form-input" id="editQMaxPerTeam" type="number" placeholder="∞" min="1">
-      </div>
-      <div class="form-group">
-        <label class="form-label">จำกัดทีม</label>
-        <input class="form-input" id="editQMaxTeams" type="number" placeholder="∞" min="1">
-      </div>
-      <div class="form-group">
-        <label class="form-label">ปิดรับเมื่อ</label>
-        <input class="form-input" id="editQCloseAt" type="datetime-local">
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="document.getElementById('editQuestModal').classList.remove('open')">ยกเลิก</button>
-      <button class="btn btn-primary" onclick="saveEditQuest()">💾 บันทึก</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="confirmModal">
   <div class="modal">
     <div class="modal-rune">⚠️</div>
@@ -498,7 +466,7 @@ function navigate(page) {
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page)?.classList.add('active');
   document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
-  const map = { quests:renderQuestsPage, roles:renderRolesPage, teams:renderTeamsPage, export:renderExportPage, answers:renderAnswersPage };
+  const map = { quests:renderQuestsPage, roles:renderRolesPage, teams:renderTeamsPage, export:renderExportPage, answers:renderAnswersPage, cards:renderCardsPage };
   if (map[page]) map[page]();
 }
 
@@ -507,171 +475,42 @@ function renderQuestsPage() {
   const quests = DB.getQuests();
   document.getElementById('questCountLabel').textContent = `${quests.length} ภารกิจ`;
   const typeLabel = {main:'ภารกิจหลัก', side:'ภารกิจรอง', bonus:'โบนัส'};
-  document.getElementById('questsTable').innerHTML = quests.map(q=>{
-    const subs = DB.getSubmissions().filter(s=>s.questId===q.id&&s.status==='approved');
-    const teamsDone = [...new Set(subs.map(s=>s.teamId))].length;
-    const limits = [];
-    if (q.maxPerTeam) limits.push(`≤${q.maxPerTeam}/ทีม`);
-    if (q.maxTeams)   limits.push(`≤${q.maxTeams}ทีม`);
-    if (q.closeAt) {
-      const cd = new Date(q.closeAt);
-      const now = new Date();
-      const closed = now > cd;
-      limits.push(`${closed?'🔒 ปิดแล้ว':'⏰ ปิด '+cd.toLocaleString('th-TH',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'})}`);
-    }
-    return `
+  document.getElementById('questsTable').innerHTML = quests.map(q=>`
     <tr id="qrow-${q.id}">
       <td style="font-size:20px;text-align:center">${q.icon}</td>
-      <td>
-        <b style="font-family:var(--font-title);font-size:13px">${q.name}</b>
-        ${q.answer ? `<div style="font-size:11px;color:var(--gold);margin-top:2px">🔑 เฉลย: <b>${q.answer}</b></div>` : ''}
-        ${limits.length ? `<div style="font-size:10px;color:var(--gold-dim);margin-top:2px">${limits.join(' · ')}</div>` : ''}
-        ${q.mediaUrl ? `<div style="font-size:10px;color:var(--magic-green);margin-top:2px">📎 มีสื่อประกอบ</div>` : ''}
-      </td>
+      <td><b style="font-family:var(--font-title);font-size:13px">${q.name}</b></td>
       <td><span class="quest-type-tag ${q.type}" style="display:inline">${typeLabel[q.type]}</span></td>
       <td style="font-family:var(--font-mono);color:var(--gold)">${q.points}</td>
-      <td style="font-size:11px;color:var(--text-shadow)">${q.evidence==='txt'?'📝 txt':q.evidence}</td>
+      <td style="font-size:11px;color:var(--text-shadow)">${q.evidence}</td>
       <td>
         <span style="font-size:11px;padding:2px 8px;border-radius:10px;${q.active?'background:rgba(34,197,94,.1);color:var(--magic-green)':'background:rgba(192,57,43,.1);color:#f87171'}">
           ${q.active?'เปิด':'ปิด'}
         </span>
       </td>
       <td style="display:flex;gap:6px">
-        <button class="btn btn-ghost btn-sm" onclick="editQuest(${q.id})">✏️ แก้</button>
         <button class="btn btn-ghost btn-sm" onclick="toggleQuest(${q.id})">${q.active?'ปิด':'เปิด'}</button>
         <button class="btn btn-danger btn-sm" onclick="deleteQuest(${q.id})">ลบ</button>
       </td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-shadow);padding:20px">ไม่มีภารกิจ</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--text-shadow);padding:20px">ไม่มีภารกิจ</td></tr>';
 }
 
-function toggleAnswerField() {
-  const ev = document.getElementById('qEvidence').value;
-  document.getElementById('qAnswerGroup').style.display = ev === 'txt' ? 'block' : 'none';
-}
-
-function previewQuestMedia(input) {
-  const file = input.files[0];
-  if (!file) return;
-  document.getElementById('qMediaName').textContent = file.name;
-  document.getElementById('qMediaClearBtn').style.display = 'inline';
-  const preview = document.getElementById('qMediaPreview');
-  const url = URL.createObjectURL(file);
-  if (file.type.startsWith('image/')) {
-    preview.innerHTML = `<img src="${url}" style="max-height:120px;border-radius:8px;margin-top:4px">`;
-  } else {
-    preview.innerHTML = `<video src="${url}" controls style="max-height:120px;border-radius:8px;margin-top:4px"></video>`;
-  }
-}
-
-function clearQuestMedia() {
-  document.getElementById('qMediaFile').value = '';
-  document.getElementById('qMediaName').textContent = 'ยังไม่ได้เลือก';
-  document.getElementById('qMediaPreview').innerHTML = '';
-  document.getElementById('qMediaUrl').value = '';
-  document.getElementById('qMediaType').value = '';
-  document.getElementById('qMediaClearBtn').style.display = 'none';
-}
-
-async function createQuest() {
+function createQuest() {
   const name = document.getElementById('qName').value.trim();
   const pts  = parseInt(document.getElementById('qPoints').value);
   if (!name || isNaN(pts)) { showToast('กรุณากรอกชื่อและคะแนน','error'); return; }
-
-  const evidence = document.getElementById('qEvidence').value;
-  const maxPerTeamVal = document.getElementById('qMaxPerTeam').value;
-  const maxTeamsVal   = document.getElementById('qMaxTeams').value;
-
-  const btn = document.getElementById('qSubmitBtn');
-  btn.disabled = true;
-
-  // Upload media ถ้ามี
-  let mediaUrl = '', mediaType = '';
-  const mediaFile = document.getElementById('qMediaFile').files[0];
-  if (mediaFile) {
-    document.getElementById('qUploadStatus').textContent = '⏳ กำลังอัปโหลดสื่อ...';
-    await new Promise((resolve, reject) => {
-      DB.uploadFile(mediaFile,
-        p => { document.getElementById('qUploadStatus').textContent = `⏳ ${p}%`; },
-        (url, type) => { mediaUrl = url; mediaType = type; resolve(); },
-        err => { showToast('Upload ล้มเหลว: ' + err, 'error'); reject(err); }
-      );
-    }).catch(() => {});
-    document.getElementById('qUploadStatus').textContent = '';
-  }
-
   DB.addQuest({
-    icon:       document.getElementById('qIcon').value || '⭐',
+    icon:     document.getElementById('qIcon').value || '⭐',
     name,
-    desc:       document.getElementById('qDesc').value.trim(),
-    points:     pts,
-    type:       document.getElementById('qType').value,
-    evidence,
-    answer:     evidence === 'txt' ? document.getElementById('qAnswer').value.trim() : '',
-    maxPerTeam: maxPerTeamVal ? parseInt(maxPerTeamVal) : null,
-    maxTeams:   maxTeamsVal   ? parseInt(maxTeamsVal)   : null,
-    closeAt:    document.getElementById('qCloseAt').value || null,
-    mediaUrl,
-    mediaType,
-    active:     true,
+    desc:     document.getElementById('qDesc').value.trim(),
+    points:   pts,
+    type:     document.getElementById('qType').value,
+    evidence: document.getElementById('qEvidence').value,
+    active:   true,
   });
-
-  ['qIcon','qName','qDesc','qPoints','qAnswer','qMaxPerTeam','qMaxTeams','qCloseAt'].forEach(id=>document.getElementById(id).value='');
-  clearQuestMedia();
-  document.getElementById('qAnswerGroup').style.display = 'none';
-  btn.disabled = false;
+  // Clear
+  ['qIcon','qName','qDesc','qPoints'].forEach(id=>document.getElementById(id).value='');
   renderQuestsPage();
   showToast('✦ สร้างภารกิจแล้ว', 'success');
-}
-
-function editQuest(id) {
-  const q = DB.getQuests().find(x=>x.id===id);
-  if (!q) return;
-  document.getElementById('editQuestId').value      = id;
-  document.getElementById('editQIcon').value        = q.icon||'⭐';
-  document.getElementById('editQName').value        = q.name||'';
-  document.getElementById('editQDesc').value        = q.desc||'';
-  document.getElementById('editQPoints').value      = q.points||0;
-  document.getElementById('editQType').value        = q.type||'main';
-  document.getElementById('editQEvidence').value    = q.evidence||'image';
-  document.getElementById('editQAnswer').value      = q.answer||'';
-  document.getElementById('editQMaxPerTeam').value  = q.maxPerTeam||'';
-  document.getElementById('editQMaxTeams').value    = q.maxTeams||'';
-  document.getElementById('editQCloseAt').value     = q.closeAt||'';
-  toggleEditAnswer();
-  document.getElementById('editQuestModal').classList.add('open');
-}
-
-function toggleEditAnswer() {
-  const ev = document.getElementById('editQEvidence').value;
-  document.getElementById('editQAnswerGroup').style.display = ev==='txt' ? 'block' : 'none';
-}
-
-function saveEditQuest() {
-  const id  = parseInt(document.getElementById('editQuestId').value);
-  const pts = parseInt(document.getElementById('editQPoints').value);
-  const name = document.getElementById('editQName').value.trim();
-  if (!name || isNaN(pts)) { showToast('กรอกชื่อและคะแนน','error'); return; }
-  const evidence = document.getElementById('editQEvidence').value;
-  const maxPT = document.getElementById('editQMaxPerTeam').value;
-  const maxTm = document.getElementById('editQMaxTeams').value;
-  const qs = DB.getQuests();
-  const idx = qs.findIndex(x=>x.id===id);
-  if (idx<0) return;
-  qs[idx] = { ...qs[idx],
-    icon:       document.getElementById('editQIcon').value||'⭐',
-    name, desc: document.getElementById('editQDesc').value.trim(),
-    points: pts, type: document.getElementById('editQType').value,
-    evidence,
-    answer:     evidence==='txt' ? document.getElementById('editQAnswer').value.trim() : qs[idx].answer,
-    maxPerTeam: maxPT ? parseInt(maxPT) : null,
-    maxTeams:   maxTm ? parseInt(maxTm) : null,
-    closeAt:    document.getElementById('editQCloseAt').value||null,
-  };
-  DB.saveQuests(qs);
-  document.getElementById('editQuestModal').classList.remove('open');
-  renderQuestsPage();
-  showToast('💾 บันทึกแล้ว','success');
 }
 
 function toggleQuest(id) {
@@ -714,41 +553,118 @@ function startTimerPreview() {
 }
 
 // ── ROLES ──────────────────────────
-function renderAnswersPage() {
-  const quests = DB.getQuests().filter(q => q.evidence === 'txt');
-  const filter = document.getElementById('answerQuestFilter');
-  if (filter) {
-    const prev = filter.value;
-    filter.innerHTML = '<option value="">— ทุกภารกิจ —</option>' +
-      quests.map(q => `<option value="${q.id}" ${prev==q.id?'selected':''}>${q.icon} ${q.name}</option>`).join('');
-  }
-  const filterId = filter ? (filter.value ? parseInt(filter.value) : null) : null;
-  const subs = DB.getSubmissions().filter(s => {
-    const q = DB.getQuests().find(x=>x.id===s.questId);
-    // รวม: ภารกิจ txt หรือ submission ที่มี autoChecked flag
-    const isTxt = (q && q.evidence === 'txt') || s.evidence === 'txt' || s.autoChecked;
-    return isTxt && (!filterId || s.questId === filterId);
-  }).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+// ── CARDS ──────────────────────────────────────────────
+let _masterOn = false;
 
-  const campers = DB.getCampers();
-  const teams   = DB.getTeams();
-  document.getElementById('answersTable').innerHTML = subs.length ? subs.map(s => {
-    const q      = DB.getQuests().find(x=>x.id===s.questId);
-    const camper = campers.find(c=>c.id===s.camperId);
-    const team   = teams.find(t=>t.id===s.teamId);
-    const correct = q?.answer && s.desc?.toLowerCase() === q.answer.toLowerCase();
-    const statusColor = s.status==='approved' ? 'var(--magic-green)' : s.status==='rejected' ? '#f87171' : 'var(--gold)';
-    const statusLabel = s.status==='approved' ? '✅ ถูก' : s.status==='rejected' ? '❌ ผิด' : '⏳ รอ';
+async function renderCardsPage() {
+  // Master switch
+  CARDS.listenMaster(on => {
+    _masterOn = on;
+    const btn = document.getElementById('masterSwitchBtn');
+    if (btn) {
+      btn.textContent = on ? '🟢 เปิดอยู่ — กดปิด' : '🔴 ปิดอยู่ — กดเปิด';
+      btn.style.background = on ? 'rgba(34,197,94,.15)' : 'rgba(192,57,43,.15)';
+    }
+  });
+  renderBuffStatus();
+  renderCardsList();
+  renderEventLog();
+}
+
+async function toggleMaster() {
+  await CARDS.setMaster(!_masterOn);
+  showToast(_masterOn ? '🔴 ปิดระบบการ์ดแล้ว' : '🟢 เปิดระบบการ์ดแล้ว');
+}
+
+async function renderBuffStatus() {
+  const buffs = await CARDS.getAllBuffs();
+  const teams = DB.getTeams();
+  const el = document.getElementById('buffStatus');
+  if (!el) return;
+  const items = [];
+  teams.forEach(t => {
+    const tb = buffs[t.id] || {};
+    if (tb.aegis?.active)      items.push(`<div style="padding:8px 12px;border-radius:8px;background:rgba(74,144,217,.1);border:1px solid rgba(74,144,217,.3);font-size:12px"><b style="color:${t.color}">${t.name}</b><br>🛡️ Aegis Shield <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px" onclick="removeBuff('${t.id}','aegis')">ลบ</button></div>`);
+    if (tb.reflect?.active)    items.push(`<div style="padding:8px 12px;border-radius:8px;background:rgba(228,190,110,.1);border:1px solid rgba(228,190,110,.3);font-size:12px"><b style="color:${t.color}">${t.name}</b><br>🔄 Reflect <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px" onclick="removeBuff('${t.id}','reflect')">ลบ</button></div>`);
+    if (tb.multiplier?.active) items.push(`<div style="padding:8px 12px;border-radius:8px;background:rgba(255,100,0,.1);border:1px solid rgba(255,100,0,.3);font-size:12px"><b style="color:${t.color}">${t.name}</b><br>🔥 x${tb.multiplier.multiplier} <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px" onclick="removeBuff('${t.id}','multiplier')">ลบ</button></div>`);
+    if (tb.freeze?.active)     items.push(`<div style="padding:8px 12px;border-radius:8px;background:rgba(100,200,255,.1);border:1px solid rgba(100,200,255,.3);font-size:12px"><b style="color:${t.color}">${t.name}</b><br>❄️ Frozen <button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px" onclick="removeBuff('${t.id}','freeze')">ลบ</button></div>`);
+  });
+  el.innerHTML = items.length ? items.join('') : '<div style="color:var(--text-shadow);font-size:13px">ไม่มี buff/debuff ตอนนี้</div>';
+}
+
+async function removeBuff(teamId, type) {
+  await CARDS.removeBuff(teamId, type);
+  renderBuffStatus();
+  showToast('ลบ buff แล้ว');
+}
+
+async function generateCards() {
+  const ability = document.getElementById('cardAbility').value;
+  const rarity  = document.getElementById('cardRarity').value;
+  const points  = parseInt(document.getElementById('cardPoints').value) || 100;
+  const qty     = Math.min(20, parseInt(document.getElementById('cardQty').value) || 1);
+  const note    = document.getElementById('cardNote').value.trim();
+
+  const cards = [];
+  for (let i=0; i<qty; i++) cards.push(await CARDS.createCard(ability, points, rarity, note));
+
+  // แสดงการ์ดที่สร้าง
+  const ab = CARD_ABILITIES[ability];
+  const ra = CARD_RARITIES[rarity];
+  document.getElementById('generatedCardsCard').style.display = 'block';
+  document.getElementById('generatedCardsTitle').textContent = `การ์ดที่สร้างใหม่ (${qty} ใบ)`;
+  document.getElementById('generatedCardsList').innerHTML = cards.map(card => `
+    <div style="width:160px;padding:16px;border-radius:12px;background:var(--bg-cell);border:2px solid ${ra.color};box-shadow:0 0 16px ${ra.glow};text-align:center;position:relative">
+      <div style="font-size:10px;letter-spacing:2px;color:${ra.color};font-family:var(--font-title)">${ra.label.toUpperCase()}</div>
+      <div style="font-size:32px;margin:8px 0">${ab.icon}</div>
+      <div style="font-family:var(--font-title);font-size:13px;color:var(--gold-bright);letter-spacing:1px">${ab.name}</div>
+      <div style="font-size:11px;color:var(--text-shadow);margin:6px 0">${ab.desc}</div>
+      ${points && (ability==='steal'||ability==='freeze') ? `<div style="font-family:var(--font-mono);font-size:14px;color:var(--gold);margin:4px 0">${points} pt</div>` : ''}
+      <div style="font-family:var(--font-mono);font-size:18px;letter-spacing:4px;color:var(--gold-bright);margin-top:8px;padding:6px;background:var(--bg-block);border-radius:6px">${card.code}</div>
+      ${note ? `<div style="font-size:10px;color:var(--text-shadow);margin-top:4px">${note}</div>` : ''}
+    </div>`).join('');
+
+  renderCardsList();
+  showToast(`🎴 สร้าง ${qty} การ์ดแล้ว`, 'success');
+}
+
+function printCards() { window.print(); }
+
+async function renderCardsList() {
+  const cards = await CARDS.getAllCards();
+  const tbody = document.getElementById('cardsTable');
+  if (!tbody) return;
+  const ra = CARD_RARITIES;
+  tbody.innerHTML = cards.length ? cards.sort((a,b)=>b.createdAt.localeCompare(a.createdAt)).map(c => {
+    const ab = CARD_ABILITIES[c.ability];
     return `<tr>
-      <td style="font-family:var(--font-title);font-size:12px">${q?.icon||''} ${q?.name||'-'}</td>
-      <td>${camper?.name||'-'}</td>
-      <td style="color:${team?.color}">${team?.name||'-'}</td>
-      <td style="font-family:var(--font-mono);font-size:13px;color:var(--text-parchment)">${s.desc||'-'}</td>
-      <td style="font-family:var(--font-mono);font-size:13px;color:var(--gold)">${q?.answer||'-'}</td>
-      <td style="color:${statusColor};font-weight:700">${statusLabel}</td>
-      <td style="font-size:11px;color:var(--text-shadow)">${new Date(s.createdAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</td>
+      <td style="font-family:var(--font-mono);font-size:14px;letter-spacing:2px;color:var(--gold-bright)">${c.code}</td>
+      <td>${ab?.icon||''} ${ab?.name||c.ability}</td>
+      <td style="color:${ra[c.rarity]?.color||'#fff'}">${ra[c.rarity]?.label||c.rarity}</td>
+      <td style="font-family:var(--font-mono);color:var(--gold)">${c.points}</td>
+      <td style="color:${c.usedBy?'#f87171':'var(--magic-green)'}">${c.usedBy?'✅ ใช้แล้ว':'⭕ ว่าง'}</td>
+      <td style="font-size:11px;color:var(--text-shadow)">${new Date(c.createdAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</td>
     </tr>`;
-  }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--text-shadow);padding:20px">ยังไม่มีคำตอบ</td></tr>';
+  }).join('') : '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-shadow)">ยังไม่มีการ์ด</td></tr>';
+}
+
+async function renderEventLog() {
+  const events = await CARDS.getEventLog();
+  const teams  = DB.getTeams();
+  const tbody  = document.getElementById('cardEventLog');
+  if (!tbody) return;
+  const typeIcon = { steal:'⚡', aegis:'🛡️', reflect:'🔄', multiplier:'🔥', freeze:'❄️', aegis_block:'🛡️' };
+  tbody.innerHTML = events.length ? events.map(ev => {
+    const from   = teams.find(t=>t.id===ev.fromTeamId);
+    const target = teams.find(t=>t.id===ev.targetTeamId);
+    return `<tr>
+      <td>${typeIcon[ev.type]||'🎴'} ${ev.type}</td>
+      <td style="color:${from?.color||'#aaa'}">${from?.name||'-'}</td>
+      <td style="color:${target?.color||'#aaa'}">${target?.name||'-'}</td>
+      <td style="font-size:12px">${ev.msg||'-'}</td>
+      <td style="font-size:11px;color:var(--text-shadow)">${new Date(ev.ts).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-shadow)">ยังไม่มี events</td></tr>';
 }
 
 function renderRolesPage() {

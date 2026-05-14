@@ -323,3 +323,239 @@ const QR = {
 function waitForSync(ms = 1500) {
   return new Promise(r => setTimeout(r, ms));
 }
+
+/* ═══════════════════════════════════════════════════════
+   TARTARUS DECK — CARD SYSTEM
+   ═══════════════════════════════════════════════════════ */
+
+// ── Card Definitions ───────────────────────────────────
+const CARD_ABILITIES = {
+  steal:      { id:'steal',      icon:'⚡', name:'Steal',        desc:'ขโมยคะแนนจากทีมเป้าหมาย',                   needsTarget:true,  rarity:'rare'      },
+  aegis:      { id:'aegis',      icon:'🛡️', name:'Aegis Shield',  desc:'ป้องกันการโจมตี 1 ครั้ง',                   needsTarget:false, rarity:'rare'      },
+  reflect:    { id:'reflect',    icon:'🔄', name:'Reflect',       desc:'สะท้อนการโจมตีกลับ 2 เท่า (ใช้ตอนโดนโจมตี)',needsTarget:false, rarity:'legendary' },
+  multiplier: { id:'multiplier', icon:'🔥', name:'Multiplier',    desc:'คูณคะแนนภารกิจถัดไป x2',                    needsTarget:false, rarity:'legendary' },
+  freeze:     { id:'freeze',     icon:'❄️', name:'Freeze',        desc:'หยุดการส่งงานของทีมเป้าหมาย 3 นาที',         needsTarget:true,  rarity:'legendary' },
+};
+
+const CARD_RARITIES = {
+  common:    { label:'Common',    color:'#b0b8c1', glow:'rgba(176,184,193,.4)',  maxHold:5 },
+  rare:      { label:'Rare',      color:'#4a90d9', glow:'rgba(74,144,217,.5)',   maxHold:4 },
+  legendary: { label:'Legendary', color:'#e4be6e', glow:'rgba(228,190,110,.6)', maxHold:3 },
+};
+
+// KEYS เพิ่มเติม
+KEYS.cards          = 'idp_cards';
+KEYS.cardEvents     = 'idp_card_events';
+KEYS.cardMasterOn   = 'idp_card_master';
+
+// ── Card DB ────────────────────────────────────────────
+const CARDS = {
+
+  // Master switch
+  isMasterOn() { return load(KEYS.cardMasterOn, false); },
+  setMaster(on) {
+    save(KEYS.cardMasterOn, on);
+    if (_fbReady && _db) _db.ref('cards/master').set(on);
+  },
+
+  // สร้างการ์ดใหม่ (admin)
+  createCard(ability, points, rarity, note) {
+    const code = _genCode();
+    const card = { id: 'card_' + nextId(), code, ability, points: points||100, rarity: rarity||'common', note: note||'', usedBy: null, usedAt: null, createdAt: isoNow() };
+    if (_fbReady && _db) _db.ref('cards/deck/' + card.id).set(card);
+    return card;
+  },
+
+  // ดึงการ์ดทั้งหมด (admin)
+  async getAllCards() {
+    if (!_fbReady || !_db) return [];
+    const snap = await _db.ref('cards/deck').once('value');
+    return snap.val() ? Object.values(snap.val()) : [];
+  },
+
+  // Redeem ด้วย code
+  async redeemCard(code, camperId, camperName, teamId) {
+    if (!_fbReady || !_db) return { ok:false, msg:'Firebase ไม่พร้อม' };
+    if (!this.isMasterOn()) return { ok:false, msg:'ระบบการ์ดยังไม่เปิด' };
+
+    // หาการ์ดจาก code
+    const snap = await _db.ref('cards/deck').orderByChild('code').equalTo(code.toUpperCase()).once('value');
+    if (!snap.exists()) return { ok:false, msg:'ไม่พบรหัสนี้' };
+    const [key, card] = Object.entries(snap.val())[0];
+    if (card.usedBy) return { ok:false, msg:'รหัสนี้ถูกใช้แล้ว' };
+
+    // เช็คจำนวนการ์ดที่ถือ
+    const myCards = await this.getCamperCards(camperId);
+    const maxHold = CARD_RARITIES[card.rarity]?.maxHold || 5;
+    if (myCards.length >= maxHold) return { ok:false, msg:`ถือการ์ดได้สูงสุด ${maxHold} ใบ` };
+
+    // Mark ว่าใช้แล้ว + เพิ่มให้ camper
+    await _db.ref('cards/deck/' + key).update({ usedBy: camperId, usedAt: isoNow() });
+    await _db.ref(`cards/hand/${camperId}/${card.id}`).set({ ...card, ownedAt: isoNow() });
+    return { ok:true, card };
+  },
+
+  // ดึงการ์ดในมือของ camper
+  async getCamperCards(camperId) {
+    if (!_fbReady || !_db) return [];
+    const snap = await _db.ref(`cards/hand/${camperId}`).once('value');
+    return snap.val() ? Object.values(snap.val()) : [];
+  },
+
+  // ใช้การ์ด
+  async activateCard(cardId, camperId, camperName, fromTeamId, targetTeamId) {
+    if (!_fbReady || !_db) return { ok:false, msg:'Firebase ไม่พร้อม' };
+    if (!this.isMasterOn()) return { ok:false, msg:'ระบบการ์ดยังไม่เปิด' };
+
+    const snap = await _db.ref(`cards/hand/${camperId}/${cardId}`).once('value');
+    if (!snap.exists()) return { ok:false, msg:'ไม่พบการ์ดนี้ในมือ' };
+    const card = snap.val();
+    const ability = CARD_ABILITIES[card.ability];
+    if (!ability) return { ok:false, msg:'ไม่รู้จัก ability นี้' };
+
+    const fromTeam = DB.getTeam(fromTeamId);
+    const targetTeam = targetTeamId ? DB.getTeam(targetTeamId) : null;
+    let resultMsg = '';
+
+    switch(card.ability) {
+      case 'steal': {
+        if (!targetTeamId) return { ok:false, msg:'ต้องเลือกทีมเป้าหมาย' };
+        // เช็ค aegis
+        const aegis = await this._checkAegis(targetTeamId);
+        if (aegis) {
+          await this._consumeAegis(targetTeamId);
+          resultMsg = `🛡️ ${targetTeam?.name} ป้องกันด้วย Aegis Shield!`;
+          await this._pushCardEvent({ type:'aegis_block', fromTeamId, targetTeamId, cardId, camperName, msg: resultMsg });
+          break;
+        }
+        DB.updateTeamScore(targetTeamId, -card.points);
+        DB.updateTeamScore(fromTeamId, card.points);
+        resultMsg = `⚡ ${camperName} ขโมย ${card.points} pt จาก ${targetTeam?.name}!`;
+        await this._pushCardEvent({ type:'steal', fromTeamId, targetTeamId, cardId, camperName, points: card.points, msg: resultMsg });
+        break;
+      }
+      case 'aegis': {
+        // เก็บ aegis shield ไว้ที่ทีม
+        await _db.ref(`cards/buffs/${fromTeamId}/aegis`).set({ active:true, cardId, setBy: camperName, setAt: isoNow() });
+        resultMsg = `🛡️ ${fromTeam?.name} เปิดใช้ Aegis Shield!`;
+        await this._pushCardEvent({ type:'aegis', fromTeamId, cardId, camperName, msg: resultMsg });
+        break;
+      }
+      case 'reflect': {
+        await _db.ref(`cards/buffs/${fromTeamId}/reflect`).set({ active:true, cardId, setBy: camperName, setAt: isoNow(), expiresAt: Date.now() + 2*60*1000 });
+        resultMsg = `🔄 ${fromTeam?.name} เปิดใช้ Reflect! (2 นาที)`;
+        await this._pushCardEvent({ type:'reflect', fromTeamId, cardId, camperName, msg: resultMsg });
+        break;
+      }
+      case 'multiplier': {
+        await _db.ref(`cards/buffs/${fromTeamId}/multiplier`).set({ active:true, multiplier:2, cardId, setBy: camperName, setAt: isoNow() });
+        resultMsg = `🔥 ${fromTeam?.name} ได้ Multiplier x2 สำหรับภารกิจถัดไป!`;
+        await this._pushCardEvent({ type:'multiplier', fromTeamId, cardId, camperName, multiplier:2, msg: resultMsg });
+        break;
+      }
+      case 'freeze': {
+        if (!targetTeamId) return { ok:false, msg:'ต้องเลือกทีมเป้าหมาย' };
+        const aegis2 = await this._checkAegis(targetTeamId);
+        if (aegis2) {
+          await this._consumeAegis(targetTeamId);
+          resultMsg = `🛡️ ${targetTeam?.name} ป้องกัน Freeze ด้วย Aegis!`;
+          await this._pushCardEvent({ type:'aegis_block', fromTeamId, targetTeamId, cardId, camperName, msg: resultMsg });
+          break;
+        }
+        const expiresAt = Date.now() + 3*60*1000;
+        await _db.ref(`cards/buffs/${targetTeamId}/freeze`).set({ active:true, cardId, frozenBy: camperName, fromTeamId, expiresAt });
+        resultMsg = `❄️ ${camperName} แช่แข็ง ${targetTeam?.name} 3 นาที!`;
+        await this._pushCardEvent({ type:'freeze', fromTeamId, targetTeamId, cardId, camperName, expiresAt, msg: resultMsg });
+        break;
+      }
+    }
+
+    // ลบการ์ดออกจากมือ
+    await _db.ref(`cards/hand/${camperId}/${cardId}`).remove();
+    DB.pushActivity(`🎴 ${resultMsg}`);
+    return { ok:true, msg: resultMsg };
+  },
+
+  // เช็คว่าทีมมี aegis ไหม
+  async _checkAegis(teamId) {
+    const snap = await _db.ref(`cards/buffs/${teamId}/aegis`).once('value');
+    return snap.val()?.active === true;
+  },
+  async _consumeAegis(teamId) {
+    await _db.ref(`cards/buffs/${teamId}/aegis`).remove();
+  },
+
+  // เช็ค freeze สำหรับ camper
+  async isTeamFrozen(teamId) {
+    if (!_fbReady || !_db) return false;
+    const snap = await _db.ref(`cards/buffs/${teamId}/freeze`).once('value');
+    const f = snap.val();
+    if (!f?.active) return false;
+    if (Date.now() > f.expiresAt) { await _db.ref(`cards/buffs/${teamId}/freeze`).remove(); return false; }
+    return true;
+  },
+
+  // เช็ค multiplier
+  async getMultiplier(teamId) {
+    if (!_fbReady || !_db) return 1;
+    const snap = await _db.ref(`cards/buffs/${teamId}/multiplier`).once('value');
+    return snap.val()?.active ? (snap.val().multiplier||2) : 1;
+  },
+  async consumeMultiplier(teamId) {
+    if (_fbReady && _db) await _db.ref(`cards/buffs/${teamId}/multiplier`).remove();
+  },
+
+  // Push card event ไปที่ Firebase (real-time alert)
+  async _pushCardEvent(event) {
+    if (!_fbReady || !_db) return;
+    event.id = 'ev_' + Date.now();
+    event.ts = isoNow();
+    await _db.ref('cards/events/' + event.id).set(event);
+    // เก็บแค่ 50 events ล่าสุด
+    const snap = await _db.ref('cards/events').orderByChild('ts').limitToFirst(1).once('value');
+  },
+
+  // Listen card events (camper ใช้เพื่อรับ real-time alert)
+  listenEvents(teamId, callback) {
+    if (!_fbReady || !_db) return;
+    _db.ref('cards/events').orderByChild('ts').limitToLast(1).on('child_added', snap => {
+      const ev = snap.val();
+      if (!ev) return;
+      // แจ้งเตือนถ้า event เกี่ยวกับทีมนี้ และเกิดขึ้นหลังจาก listen
+      if (ev.targetTeamId === teamId || ev.fromTeamId === teamId) callback(ev);
+    });
+  },
+
+  // Listen master switch
+  listenMaster(callback) {
+    if (!_fbReady || !_db) return;
+    _db.ref('cards/master').on('value', snap => callback(snap.val() === true));
+  },
+
+  // ดึง log events ทั้งหมด (admin)
+  async getEventLog() {
+    if (!_fbReady || !_db) return [];
+    const snap = await _db.ref('cards/events').orderByChild('ts').limitToLast(50).once('value');
+    return snap.val() ? Object.values(snap.val()).reverse() : [];
+  },
+
+  // ดึง buffs ของทุกทีม (admin dashboard)
+  async getAllBuffs() {
+    if (!_fbReady || !_db) return {};
+    const snap = await _db.ref('cards/buffs').once('value');
+    return snap.val() || {};
+  },
+
+  // ลบ buff เฉพาะทีม (admin)
+  async removeBuff(teamId, buffType) {
+    if (_fbReady && _db) await _db.ref(`cards/buffs/${teamId}/${buffType}`).remove();
+  },
+};
+
+// helper สร้าง code 6 หลัก
+function _genCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i=0; i<6; i++) code += chars[Math.floor(Math.random()*chars.length)];
+  return code;
+}

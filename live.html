@@ -366,7 +366,7 @@
 
 <script src="data.js"></script>
 <script>
-function render() {
+async function render() {
   const teams   = DB.getTeams().sort((a,b) => b.score - a.score);
   const campers = DB.getCampers().sort((a,b) => (b.score||0) - (a.score||0));
   const max     = teams[0]?.score || 1;
@@ -407,10 +407,19 @@ function render() {
       </div>`;
   }).join('') || '<div style="color:var(--text-shadow);text-align:center;padding:40px;font-size:14px;">ยังไม่มีน้องลงทะเบียน</div>';
 
-  // ── Ticker ──
+  // ── Ticker (activities + card events) ──
   const acts = DB.getActivities().slice(0, 10);
-  if (acts.length) {
-    document.getElementById('tickerInner').innerHTML = [...acts, ...acts].map(a =>
+  // รวม card events จาก Firebase
+  let cardItems = [];
+  if (_fbReady && _db) {
+    try {
+      const snap = await _db.ref('cards/events').orderByChild('ts').limitToLast(5).once('value');
+      if (snap.val()) cardItems = Object.values(snap.val()).map(ev => ({ text: '🎴 ' + (ev.msg||''), time: '' }));
+    } catch(e) {}
+  }
+  const allItems = [...cardItems, ...acts];
+  if (allItems.length) {
+    document.getElementById('tickerInner').innerHTML = [...allItems, ...allItems].map(a =>
       `<span class="ticker-item">${a.text} &nbsp;·&nbsp; </span>`).join('');
   }
 

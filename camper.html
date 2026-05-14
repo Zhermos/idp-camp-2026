@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TARTARUS — น้องค่าย</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="data.js"></script>
 </head>
 <body>
@@ -72,6 +72,7 @@
         <div class="sidebar-section-label">เมนู</div>
         <div class="nav-item active" data-page="quests"      onclick="navigate('quests')">      <span class="nav-icon">⚔️</span><span>ภารกิจ</span>        <span class="nav-badge" id="questBadge">0</span></div>
         <div class="nav-item"        data-page="submissions" onclick="navigate('submissions')"> <span class="nav-icon">📜</span><span>งานของฉัน</span>     <span class="nav-badge" id="pendingBadge" style="display:none">0</span></div>
+        <div class="nav-item"        data-page="armory"      onclick="navigate('armory')">      <span class="nav-icon">🎴</span><span>คลังแสง</span>       <span class="nav-badge" id="armoryBadge" style="display:none">0</span></div>
         <div class="nav-item"        data-page="leaderboard" onclick="navigate('leaderboard')"> <span class="nav-icon">🏛</span><span>Leaderboard</span></div>
         <div class="nav-item"        data-page="profile"     onclick="navigate('profile')">     <span class="nav-icon">🦉</span><span>โปรไฟล์</span></div>
       </div>
@@ -116,6 +117,67 @@
       </div>
 
       <!-- LEADERBOARD (Team + Personal) -->
+      <!-- ARMORY PAGE -->
+      <div class="page" id="page-armory">
+        <div class="page-header">
+          <h1 class="page-title">🎴 คลังแสง</h1>
+          <p class="page-subtitle" id="armoryStatus">The Tartarus Deck</p>
+        </div>
+
+        <!-- Redeem Card -->
+        <div class="card">
+          <div class="card-header"><span class="card-title">✦ รับการ์ด</span></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">รหัสการ์ด 6 หลัก</label>
+              <div style="display:flex;gap:10px">
+                <input class="form-input" id="redeemCode" placeholder="เช่น AB3X7K" maxlength="6" style="font-family:var(--font-mono);font-size:18px;letter-spacing:4px;text-transform:uppercase">
+                <button class="btn btn-primary" onclick="redeemCard()">รับ</button>
+              </div>
+            </div>
+            <div id="redeemMsg" style="font-size:13px;min-height:18px;text-align:center"></div>
+          </div>
+        </div>
+
+        <!-- My Cards -->
+        <div class="card mt-16">
+          <div class="card-header"><span class="card-title">🃏 การ์ดในมือ</span><button class="btn btn-ghost btn-sm" onclick="renderArmory()">🔄</button></div>
+          <div id="myCardsList" class="card-body" style="display:flex;flex-wrap:wrap;gap:12px;min-height:80px">
+            <div style="color:var(--text-shadow);font-size:13px;width:100%;text-align:center;padding:20px">กำลังโหลด...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD ACTIVATE MODAL -->
+      <div class="modal-overlay" id="activateModal">
+        <div class="modal" style="max-width:360px">
+          <div class="modal-rune" id="activateIcon">🎴</div>
+          <div class="modal-title" id="activateName">ใช้การ์ด</div>
+          <div class="modal-subtitle" id="activateDesc"></div>
+          <div class="form-group mt-16" id="targetTeamGroup">
+            <label class="form-label">เลือกทีมเป้าหมาย</label>
+            <select class="form-select" id="targetTeamSelect"></select>
+          </div>
+          <div id="activateMsg" style="font-size:13px;text-align:center;min-height:18px;color:var(--gold)"></div>
+          <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="document.getElementById('activateModal').classList.remove('open')">ยกเลิก</button>
+            <button class="btn btn-primary" id="activateConfirmBtn" onclick="confirmActivate()">⚡ ใช้การ์ด</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD ALERT OVERLAY (full screen) -->
+      <div id="cardAlertOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+        <div id="cardAlertIcon" style="font-size:80px;animation:pulse 1s ease-in-out infinite">🎴</div>
+        <div id="cardAlertTitle" style="font-family:var(--font-title);font-size:28px;color:var(--gold-bright);margin:16px 0;letter-spacing:2px"></div>
+        <div id="cardAlertMsg" style="font-size:16px;color:var(--text-parchment);max-width:300px;line-height:1.6"></div>
+        <div id="cardAlertReflect" style="display:none;margin-top:24px">
+          <div style="font-size:13px;color:#f87171;margin-bottom:12px">⚠️ ทีมคุณโดนโจมตี! กด Reflect ภายใน <span id="reflectTimer">120</span> วิ</div>
+          <button class="btn btn-primary" onclick="useReflect()" style="background:rgba(228,190,110,.2);border:1px solid var(--gold)">🔄 สะท้อนกลับ 2x</button>
+        </div>
+        <button class="btn btn-ghost mt-16" onclick="closeCardAlert()">รับทราบ</button>
+      </div>
+
       <div class="page" id="page-leaderboard">
         <div class="page-header">
           <h1 class="page-title">🏛 LEADERBOARD</h1>
@@ -190,12 +252,7 @@
     <div class="modal-rune">✦</div>
     <div class="modal-title" id="modalQuestName">ส่งหลักฐาน</div>
     <div class="modal-subtitle" id="modalQuestDesc"></div>
-
-    <!-- สื่อประกอบภารกิจ -->
-    <div id="questMediaBlock" style="display:none;margin-bottom:16px;border-radius:var(--r-lg);overflow:hidden"></div>
-
-    <!-- file upload (image/video) -->
-    <div class="form-group" id="fileUploadGroup">
+    <div class="form-group">
       <label class="form-label">อัปโหลดหลักฐาน</label>
       <div class="upload-area" onclick="document.getElementById('fileInput').click()">
         <div class="upload-icon" id="uploadPreview">📷</div>
@@ -204,21 +261,13 @@
       </div>
       <input type="file" id="fileInput" accept="image/*,video/*" style="display:none" onchange="previewFile(this)">
     </div>
-
-    <!-- txt answer -->
-    <div class="form-group" id="txtAnswerGroup" style="display:none">
-      <label class="form-label">พิมพ์คำตอบ</label>
-      <input class="form-input" id="txtAnswer" placeholder="พิมพ์คำตอบที่นี่...">
-    </div>
-
     <div class="form-group">
       <label class="form-label">คำอธิบายเพิ่มเติม</label>
       <textarea class="form-textarea" id="submissionDesc" placeholder="อธิบายสั้นๆ ว่าทำอะไรไปบ้าง..."></textarea>
     </div>
-    <div id="submitProgress" style="font-size:12px;color:var(--gold);text-align:center;min-height:16px"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal()">ยกเลิก</button>
-      <button class="btn btn-primary" id="submitWorkBtn" onclick="submitWork()">📤 ส่งงาน</button>
+      <button class="btn btn-primary" onclick="submitWork()">📤 ส่งงาน</button>
     </div>
   </div>
 </div>
@@ -236,16 +285,20 @@ let countdownInt   = null;
 const QUOTES = ['"γνῶθι σεαυτόν" — รู้จักตัวเอง', '"Courage is knowing what not to fear"', '"Even gods are bound by fate"'];
 
 // ── BOOT ──────────────────────────
+let _bootDone = false;
+
 function boot() {
   const params = new URLSearchParams(location.search);
   teamId = params.get('team');
 
-  // onAuthStateChanged จะ fire ครั้งแรกเมื่อ Firebase พร้อม
-  AUTH.onAuthStateChanged(async user => {
-    // ถ้า session มีแล้ว (เช่น popup login handle ไปแล้ว) ไม่ต้องทำซ้ำ
-    if (session) return;
+  // ใช้ onAuthStateChanged แค่ครั้งเดียว
+  const unsubscribe = AUTH.onAuthStateChanged(async user => {
+    if (_bootDone) return;  // ป้องกันเรียกซ้ำ
+    _bootDone = true;
+    unsubscribe && unsubscribe();
 
     if (!user) {
+      // ไม่ได้ login
       if (!teamId) {
         document.body.innerHTML = `<div class="login-wrap"><div class="login-card"><div class="login-logo">TARTARUS</div><div class="login-sub">กรุณาสแกน QR Code ของทีมคุณ</div></div></div>`;
         return;
@@ -254,11 +307,12 @@ function boot() {
       return;
     }
 
-    // Login แล้ว — รอ Firebase sync ก่อน
-    await waitForSync(1500);
-
+    // Login แล้ว — รอ Firebase pull data ก่อน
     const uid = user.uid;
+    await new Promise(r => setTimeout(r, 1500));
+
     if (!teamId) {
+      // ไม่มี teamId ใน URL — หาจาก uid
       const found = DB.getCampers().find(c => c.uid === uid);
       if (found) {
         teamId = found.teamId;
@@ -271,13 +325,14 @@ function boot() {
       return;
     }
 
+    // มี teamId — เช็คว่าเคย register ไว้ไหม
     const existing = DB.getCampers().find(c => c.uid === uid && c.teamId === teamId);
     if (existing) {
       session = { camperId: existing.id, teamId, name: existing.name, uid };
       DB.setSession(session);
-      document.getElementById('registerWrap').style.display = 'none';
       showApp();
     } else {
+      // ยังไม่เคย register — ลงทะเบียนด้วยชื่อจาก Google
       const name = user.displayName || user.email.split('@')[0];
       _doRegister(uid, name, user.photoURL);
     }
@@ -292,7 +347,6 @@ function boot() {
     if (!still) {
       alert('บัญชีของคุณถูกลบออกจากระบบโดย Admin');
       DB.clearSession();
-      session = null;
       await AUTH.signOut();
       location.reload();
     }
@@ -319,17 +373,18 @@ async function registerCamper() {
   try {
     const result = await AUTH.signInWithGoogle();
     const user = result.user;
-    // รอ Firebase sync ก่อน
-    await waitForSync(1500);
     const name = user.displayName || user.email.split('@')[0];
-    const existing = DB.getCampers().find(c => c.uid === user.uid && c.teamId === teamId);
-    if (existing) {
-      session = { camperId: existing.id, teamId, name: existing.name, uid: user.uid };
-      DB.setSession(session);
-      document.getElementById('registerWrap').style.display = 'none';
-      showApp();
-    } else {
-      _doRegister(user.uid, name, user.photoURL);
+    // _bootDone อาจ true แล้ว — handle โดยตรงเลย
+    if (_bootDone) {
+      const existing = DB.getCampers().find(c => c.uid === user.uid && c.teamId === teamId);
+      if (existing) {
+        session = { camperId: existing.id, teamId, name: existing.name, uid: user.uid };
+        DB.setSession(session);
+        document.getElementById('registerWrap').style.display = 'none';
+        showApp();
+      } else {
+        _doRegister(user.uid, name, user.photoURL);
+      }
     }
   } catch(e) {
     if (e.code !== 'auth/popup-closed-by-user') {
@@ -376,9 +431,9 @@ function _doRegister(uid, name, photoURL) {
 
 async function camperLogout() {
   if (!confirm('เปลี่ยนบัญชี Google ไหม?')) return;
-  session = null;       // clear ก่อนเพื่อป้องกัน onAuthStateChanged re-login
   DB.clearSession();
   await AUTH.signOut();
+  // reload เพื่อให้ onAuthStateChanged trigger ใหม่
   location.reload();
 }
 
@@ -389,6 +444,12 @@ function showApp() {
   renderQuestGrid();
   renderActivity();
   document.getElementById('sidebarQuote').textContent = QUOTES[Math.floor(Math.random()*QUOTES.length)];
+  // Card system
+  initCardListener();
+  CARDS.getCamperCards(session.camperId).then(cards => {
+    const badge = document.getElementById('armoryBadge');
+    if (badge) { badge.textContent = cards.length; badge.style.display = cards.length ? 'inline' : 'none'; }
+  });
 }
 
 // ── HEADER ────────────────────────
@@ -434,7 +495,7 @@ function navigate(page) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page)?.classList.add('active');
   document.querySelector(`.nav-item[data-page="${page}"]`)?.classList.add('active');
-  const map = { submissions: renderSubmissions, leaderboard: renderLeaderboard, profile: renderProfile };
+  const map = { submissions: renderSubmissions, leaderboard: renderLeaderboard, profile: renderProfile, armory: renderArmory };
   if (map[page]) map[page]();
 }
 
@@ -444,27 +505,6 @@ function filterQuests(f, btn) {
   btn.classList.add('active');
   currentFilter = f;
   renderQuestGrid(f);
-}
-
-function getQuestLimit(q) {
-  // เช็ค closeAt
-  if (q.closeAt && new Date() > new Date(q.closeAt)) {
-    return { blocked:true, reason:'หมดเวลาแล้ว' };
-  }
-  const allSubs = DB.getSubmissions().filter(s=>s.questId===q.id&&s.status==='approved');
-  // เช็ค maxPerTeam
-  if (q.maxPerTeam) {
-    const teamCount = allSubs.filter(s=>s.teamId===session.teamId).length;
-    if (teamCount >= q.maxPerTeam) return { blocked:true, reason:`ทีมคุณทำครบ ${q.maxPerTeam} คนแล้ว` };
-  }
-  // เช็ค maxTeams
-  if (q.maxTeams) {
-    const teamsDone = new Set(allSubs.map(s=>s.teamId));
-    if (!teamsDone.has(session.teamId) && teamsDone.size >= q.maxTeams) {
-      return { blocked:true, reason:`เต็มแล้ว (${teamsDone.size}/${q.maxTeams} ทีม)` };
-    }
-  }
-  return { blocked:false, reason:'' };
 }
 
 function renderQuestGrid(filter = currentFilter) {
@@ -479,25 +519,18 @@ function renderQuestGrid(filter = currentFilter) {
   document.getElementById('questGrid').innerHTML = quests.map(q => {
     const done    = myApproved.has(q.id);
     const pending = myPending.has(q.id);
-    const limit   = !done && !pending ? getQuestLimit(q) : { blocked:false };
-    const blocked = limit.blocked;
     return `
-      <div class="quest-card ${q.type} ${done?'done':''}" ${blocked?'style="opacity:.6"':''}>
-        ${done    ? '<div class="quest-done-stamp">✅ เสร็จแล้ว</div>' : ''}
+      <div class="quest-card ${q.type} ${done?'done':''}">
+        ${done ? '<div class="quest-done-stamp">✅ เสร็จแล้ว</div>' : ''}
         ${pending ? '<div class="quest-done-stamp" style="background:rgba(74,144,217,.12);color:var(--magic-blue);border-color:rgba(74,144,217,.3);">🔵 รอตรวจ</div>' : ''}
-        ${blocked ? `<div class="quest-done-stamp" style="background:rgba(192,57,43,.1);color:#f87171;border-color:rgba(192,57,43,.3);">🔒 ${limit.reason}</div>` : ''}
         <div class="quest-icon">${q.icon}</div>
         <div class="quest-name">${q.name}</div>
         <div class="quest-desc">${q.desc}</div>
-        ${q.mediaUrl ? (q.mediaType==='video'
-          ? `<video src="${q.mediaUrl}" controls style="width:100%;border-radius:8px;margin:8px 0;max-height:160px"></video>`
-          : `<img src="${q.mediaUrl}" style="width:100%;border-radius:8px;margin:8px 0;max-height:160px;object-fit:cover">`) : ''}
-        ${q.closeAt ? `<div class="quest-countdown" id="qcd-${q.id}" style="font-family:var(--font-mono);font-size:12px;color:${new Date()>new Date(q.closeAt)?'#f87171':'var(--gold)'};margin:6px 0;text-align:center"></div>` : ''}
         <div class="quest-footer">
           <div class="quest-points">⭐ ${q.points} pt</div>
           <div class="quest-type-tag ${q.type}">${typeLabel[q.type]}</div>
         </div>
-        ${!done && !pending && !blocked ? `<button class="quest-submit-btn" onclick="openSubmit(${q.id})">📜 ส่งหลักฐาน</button>` : ''}
+        ${!done && !pending ? `<button class="quest-submit-btn" onclick="openSubmit(${q.id})">📜 ส่งหลักฐาน</button>` : ''}
       </div>`;
   }).join('') || '<div style="text-align:center;color:var(--text-shadow);padding:40px;font-size:14px;">ไม่มีภารกิจในหมวดนี้</div>';
 }
@@ -513,29 +546,6 @@ function openSubmit(questId) {
   document.getElementById('uploadText').textContent = 'คลิกเพื่อเลือกรูปหรือวิดีโอ';
   document.getElementById('submissionDesc').value = '';
   document.getElementById('fileInput').value = '';
-  document.getElementById('submitProgress').textContent = '';
-  if (document.getElementById('txtAnswer')) document.getElementById('txtAnswer').value = '';
-
-  // สื่อประกอบภารกิจ
-  const mediaBlock = document.getElementById('questMediaBlock');
-  if (q.mediaUrl) {
-    mediaBlock.style.display = 'block';
-    mediaBlock.innerHTML = q.mediaType === 'video'
-      ? `<video src="${q.mediaUrl}" controls style="width:100%;border-radius:8px;max-height:200px"></video>`
-      : `<img src="${q.mediaUrl}" style="width:100%;border-radius:8px;max-height:200px;object-fit:cover">`;
-  } else {
-    mediaBlock.style.display = 'none';
-    mediaBlock.innerHTML = '';
-  }
-
-  // สลับ UI ตามประเภทหลักฐาน
-  const isTxt = q.evidence === 'txt';
-  document.getElementById('fileUploadGroup').style.display = isTxt ? 'none' : 'block';
-  document.getElementById('txtAnswerGroup').style.display  = isTxt ? 'block' : 'none';
-  // ซ่อนช่องอธิบายเพิ่มเติมเมื่อเป็น txt
-  const descGroup = document.getElementById('submissionDesc')?.closest('.form-group');
-  if (descGroup) descGroup.style.display = isTxt ? 'none' : 'block';
-
   document.getElementById('submitModal').classList.add('open');
 }
 
@@ -552,67 +562,25 @@ function previewFile(input) {
   }
 }
 
-async function submitWork() {
+function submitWork() {
   if (!currentQuestId) return;
-  const q    = DB.getQuests().find(x=>x.id===currentQuestId);
+  const q = DB.getQuests().find(x=>x.id===currentQuestId);
   const team = DB.getTeam(session.teamId);
-  const btn  = document.getElementById('submitWorkBtn');
-  const prog = document.getElementById('submitProgress');
-  btn.disabled = true;
-
-  // ── TXT: ตรวจอัตโนมัติ ──
-  if (q.evidence === 'txt') {
-    const ans = document.getElementById('txtAnswer').value.trim();
-    if (!ans) { showToast('กรุณาพิมพ์คำตอบ', 'error'); btn.disabled=false; return; }
-    const correct = q.answer && ans.toLowerCase() === q.answer.toLowerCase();
-    const sub = DB.addSubmission({
-      questId:    q.id, questName: q.name, questPoints: q.points,
-      camperId:   session.camperId, camperName: session.name, teamId: session.teamId,
-      desc:       ans, evidence: 'txt', autoChecked: true,
-    });
-    if (correct) {
-      // auto approve
-      DB.updateSubmission(sub.id, { status:'approved', points: q.points, autoApproved: true });
-      DB.updateCamperScore(session.camperId, q.points);
-      DB.updateTeamScore(session.teamId, q.points);
-      DB.checkAndAwardBadges(session.camperId);
-      DB.pushActivity(`${team.icon} <b style="color:${team.color}">${session.name}</b> ตอบ "${q.name}" ถูกต้อง! ✅`, session.teamId);
-      closeModal(); renderQuestGrid(); renderSidebar(); renderActivity();
-      showToast('🎉 คำตอบถูกต้อง! +' + q.points + ' pt', 'success');
-    } else {
-      DB.updateSubmission(sub.id, { status:'rejected', autoRejected: true });
-      btn.disabled = false;
-      showToast('❌ คำตอบไม่ถูกต้อง ลองใหม่อีกครั้ง', 'error');
-    }
-    return;
-  }
-
-  // ── FILE: upload ──
-  const file = document.getElementById('fileInput').files?.[0];
-  if (!file) { showToast('กรุณาเลือกไฟล์ก่อน', 'error'); btn.disabled=false; return; }
-
-  prog.textContent = '⏳ กำลังอัปโหลด...';
-  let fileUrl = '', fileType = '';
-  await new Promise((resolve, reject) => {
-    DB.uploadFile(file,
-      p => { prog.textContent = `⏳ อัปโหลด ${p}%`; },
-      (url, type) => { fileUrl = url; fileType = type; resolve(); },
-      err => { showToast('Upload ล้มเหลว: ' + err, 'error'); reject(err); }
-    );
-  }).catch(() => { btn.disabled=false; prog.textContent=''; return; });
-
-  if (!fileUrl) { btn.disabled=false; return; }
-
-  prog.textContent = '';
   DB.addSubmission({
-    questId:    q.id, questName: q.name, questPoints: q.points,
-    camperId:   session.camperId, camperName: session.name, teamId: session.teamId,
+    questId:    q.id,
+    questName:  q.name,
+    questPoints:q.points,
+    camperId:   session.camperId,
+    camperName: session.name,
+    teamId:     session.teamId,
     desc:       document.getElementById('submissionDesc').value,
-    fileUrl, fileType, evidence: q.evidence,
+    hasFile:    !!document.getElementById('fileInput').files?.[0],
   });
   DB.pushActivity(`${team.icon} <b style="color:${team.color}">${session.name}</b> ส่งหลักฐาน "${q.name}"`, session.teamId);
-  btn.disabled = false;
-  closeModal(); renderQuestGrid(); renderSidebar(); renderActivity();
+  closeModal();
+  renderQuestGrid();
+  renderSidebar();
+  renderActivity();
   showToast('📜 ส่งงานเรียบร้อย! รอพี่สต๊าฟตรวจ 🙏', 'success');
 }
 
@@ -707,6 +675,158 @@ function renderProfile() {
   document.getElementById('badgeCount').textContent = `${earnedCount}/${allBadges.length} ปลดล็อก`;
 }
 
+// ── CARDS / ARMORY ────────────────────────────────────
+let _activatingCard = null;
+let _reflectInterval = null;
+
+async function renderArmory() {
+  const masterOn = CARDS.isMasterOn();
+  const statusEl = document.getElementById('armoryStatus');
+  if (statusEl) statusEl.textContent = masterOn ? '⚡ ระบบการ์ดเปิดใช้งาน' : '🔒 ระบบการ์ดยังไม่เปิด';
+
+  const cards = await CARDS.getCamperCards(session.camperId);
+  const badge = document.getElementById('armoryBadge');
+  if (badge) { badge.textContent = cards.length; badge.style.display = cards.length ? 'inline' : 'none'; }
+
+  const list = document.getElementById('myCardsList');
+  if (!list) return;
+
+  if (!masterOn) {
+    list.innerHTML = '<div style="color:var(--text-shadow);font-size:13px;width:100%;text-align:center;padding:20px">🔒 รอ Admin เปิดระบบการ์ด</div>';
+    return;
+  }
+  if (!cards.length) {
+    list.innerHTML = '<div style="color:var(--text-shadow);font-size:13px;width:100%;text-align:center;padding:20px">ยังไม่มีการ์ด — รับรหัสจากพี่สต๊าฟ</div>';
+    return;
+  }
+  list.innerHTML = cards.map(card => {
+    const ab = CARD_ABILITIES[card.ability];
+    const ra = CARD_RARITIES[card.rarity];
+    return `<div onclick="openActivate('${card.id}')" style="cursor:pointer;width:140px;padding:14px;border-radius:12px;background:var(--bg-cell);border:2px solid ${ra?.color||'#555'};box-shadow:0 0 14px ${ra?.glow||'transparent'};text-align:center">
+      <div style="font-size:10px;letter-spacing:2px;color:${ra?.color||'#fff'};font-family:var(--font-title)">${ra?.label||card.rarity}</div>
+      <div style="font-size:36px;margin:8px 0">${ab?.icon||'🎴'}</div>
+      <div style="font-family:var(--font-title);font-size:12px;color:var(--gold-bright);letter-spacing:1px">${ab?.name||card.ability}</div>
+      <div style="font-size:10px;color:var(--text-shadow);margin-top:4px">${ab?.desc||''}</div>
+      ${card.points&&(card.ability==='steal'||card.ability==='freeze')?`<div style="font-family:var(--font-mono);font-size:13px;color:var(--gold);margin-top:6px">${card.points} pt</div>`:''}
+      <div style="margin-top:10px;padding:4px 8px;background:var(--bg-block);border-radius:6px;font-size:11px;color:var(--text-shadow)">แตะเพื่อใช้</div>
+    </div>`;
+  }).join('');
+}
+
+function openActivate(cardId) {
+  CARDS.getCamperCards(session.camperId).then(cards => {
+    const card = cards.find(c=>c.id===cardId);
+    if (!card) return;
+    _activatingCard = card;
+    const ab = CARD_ABILITIES[card.ability];
+    document.getElementById('activateIcon').textContent = ab?.icon||'🎴';
+    document.getElementById('activateName').textContent = ab?.name||card.ability;
+    document.getElementById('activateDesc').textContent = ab?.desc||'';
+    document.getElementById('activateMsg').textContent = '';
+    const needsTarget = ab?.needsTarget;
+    document.getElementById('targetTeamGroup').style.display = needsTarget ? 'block' : 'none';
+    if (needsTarget) {
+      document.getElementById('targetTeamSelect').innerHTML = DB.getTeams().filter(t=>t.id!==session.teamId).map(t=>`<option value="${t.id}">${t.icon} ${t.name}</option>`).join('');
+    }
+    document.getElementById('activateModal').classList.add('open');
+  });
+}
+
+async function confirmActivate() {
+  if (!_activatingCard) return;
+  const btn = document.getElementById('activateConfirmBtn');
+  btn.disabled = true;
+  const ab = CARD_ABILITIES[_activatingCard.ability];
+  const targetTeamId = ab?.needsTarget ? document.getElementById('targetTeamSelect').value : null;
+  const result = await CARDS.activateCard(_activatingCard.id, session.camperId, session.name, session.teamId, targetTeamId);
+  if (result.ok) {
+    document.getElementById('activateModal').classList.remove('open');
+    renderArmory();
+    showToast('🎴 ' + result.msg, 'success');
+  } else {
+    document.getElementById('activateMsg').textContent = '❌ ' + result.msg;
+    document.getElementById('activateMsg').style.color = '#f87171';
+  }
+  btn.disabled = false;
+  _activatingCard = null;
+}
+
+async function redeemCard() {
+  const code = document.getElementById('redeemCode').value.trim().toUpperCase();
+  const msgEl = document.getElementById('redeemMsg');
+  if (code.length !== 6) { msgEl.style.color='#f87171'; msgEl.textContent='รหัสต้อง 6 หลัก'; return; }
+  msgEl.style.color='var(--gold)'; msgEl.textContent='กำลังตรวจสอบ...';
+  const result = await CARDS.redeemCard(code, session.camperId, session.name, session.teamId);
+  if (result.ok) {
+    msgEl.style.color='var(--magic-green)';
+    msgEl.textContent = `✅ ได้รับ ${CARD_ABILITIES[result.card.ability]?.icon} ${CARD_ABILITIES[result.card.ability]?.name}!`;
+    document.getElementById('redeemCode').value = '';
+    renderArmory();
+  } else {
+    msgEl.style.color='#f87171';
+    msgEl.textContent = '❌ ' + result.msg;
+  }
+}
+
+function initCardListener() {
+  CARDS.listenEvents(session.teamId, ev => showCardAlert(ev));
+  CARDS.listenMaster(on => {
+    const el = document.getElementById('armoryStatus');
+    if (el) el.textContent = on ? '⚡ ระบบการ์ดเปิดใช้งาน' : '🔒 ระบบการ์ดยังไม่เปิด';
+  });
+}
+
+function showCardAlert(ev) {
+  const overlay = document.getElementById('cardAlertOverlay');
+  const icons = { steal:'⚡', aegis:'🛡️', reflect:'🔄', multiplier:'🔥', freeze:'❄️', aegis_block:'🛡️' };
+  document.getElementById('cardAlertIcon').textContent = icons[ev.type]||'🎴';
+  document.getElementById('cardAlertTitle').textContent =
+    ev.type==='freeze' && ev.targetTeamId===session.teamId ? '❄️ ทีมคุณโดน Freeze!' :
+    ev.type==='steal'  && ev.targetTeamId===session.teamId ? '⚡ โดนขโมยคะแนน!'     : '🎴 มีการใช้การ์ด!';
+  document.getElementById('cardAlertMsg').textContent = ev.msg||'';
+  const reflectEl = document.getElementById('cardAlertReflect');
+  reflectEl.style.display = 'none';
+  if ((ev.type==='steal'||ev.type==='freeze') && ev.targetTeamId===session.teamId) {
+    CARDS.getCamperCards(session.camperId).then(cards => {
+      if (cards.some(c=>c.ability==='reflect')) {
+        reflectEl.style.display='block';
+        let secs = 120;
+        document.getElementById('reflectTimer').textContent = secs;
+        _reflectInterval = setInterval(() => {
+          secs--; const el=document.getElementById('reflectTimer'); if(el) el.textContent=secs;
+          if (secs<=0) { clearInterval(_reflectInterval); reflectEl.style.display='none'; }
+        }, 1000);
+        reflectEl.dataset.pendingEvent = JSON.stringify(ev);
+      }
+    });
+  }
+  overlay.style.display = 'flex';
+  try { const ctx=new AudioContext(),o=ctx.createOscillator(),g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); o.frequency.setValueAtTime(880,ctx.currentTime); o.frequency.setValueAtTime(440,ctx.currentTime+.1); g.gain.setValueAtTime(.3,ctx.currentTime); g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.5); o.start(); o.stop(ctx.currentTime+.5); } catch(e) {}
+}
+
+function closeCardAlert() {
+  document.getElementById('cardAlertOverlay').style.display='none';
+  if (_reflectInterval) { clearInterval(_reflectInterval); _reflectInterval=null; }
+}
+
+async function useReflect() {
+  const reflectEl = document.getElementById('cardAlertReflect');
+  const ev = JSON.parse(reflectEl.dataset.pendingEvent||'{}');
+  if (!ev.fromTeamId) return;
+  const cards = await CARDS.getCamperCards(session.camperId);
+  const rc = cards.find(c=>c.ability==='reflect');
+  if (!rc) { showToast('ไม่มีการ์ด Reflect','error'); return; }
+  const pts = (ev.points||100)*2;
+  DB.updateTeamScore(ev.fromTeamId, -pts);
+  DB.updateTeamScore(session.teamId, pts);
+  await CARDS._pushCardEvent({ type:'reflect', fromTeamId:session.teamId, targetTeamId:ev.fromTeamId, camperName:session.name, points:pts, msg:`🔄 ${session.name} สะท้อน Reflect กลับ! ${pts} pt` });
+  if (_fbReady&&_db) await _db.ref(`cards/hand/${session.camperId}/${rc.id}`).remove();
+  clearInterval(_reflectInterval);
+  closeCardAlert();
+  renderArmory();
+  showToast('🔄 สะท้อนกลับสำเร็จ! +'+pts+' pt','success');
+}
+
 // ── ACTIVITY ──────────────────────
 function renderActivity() {
   const acts = DB.getActivities().filter(a => !a.teamId || a.teamId === session?.teamId);
@@ -721,23 +841,6 @@ function refreshActivity() {
 }
 
 // ── COUNTDOWN ─────────────────────
-function updateQuestCountdowns() {
-  document.querySelectorAll('.quest-countdown').forEach(el => {
-    const qId = parseInt(el.id.replace('qcd-',''));
-    const q   = DB.getQuests().find(x=>x.id===qId);
-    if (!q?.closeAt) return;
-    const diff = Math.floor((new Date(q.closeAt) - new Date()) / 1000);
-    if (diff <= 0) {
-      el.textContent = '🔒 หมดเวลาแล้ว';
-      el.style.color = '#f87171';
-    } else {
-      const h = Math.floor(diff/3600), m = Math.floor((diff%3600)/60), s = diff%60;
-      el.textContent = `⏰ เหลือ ${h>0?h+'ชม. ':''}${m}:${String(s).padStart(2,'0')}`;
-      el.style.color = diff < 300 ? '#f87171' : diff < 1800 ? 'var(--gold)' : 'var(--magic-green)';
-    }
-  });
-}
-
 function startCountdown() {
   const el = document.getElementById('countdownTimer');
   const wrap = document.getElementById('headerCountdown');
@@ -752,8 +855,7 @@ function startCountdown() {
     el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   }
   tick();
-  setInterval(() => { tick(); updateQuestCountdowns(); }, 1000);
-  updateQuestCountdowns();
+  setInterval(tick, 1000);
 }
 
 // ── OFFLINE ───────────────────────
