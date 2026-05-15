@@ -332,19 +332,50 @@ function boot() {
         DB.setSession(session);
         showApp();
       } else {
-        document.body.innerHTML = `<div class="login-wrap"><div class="login-card"><div class="login-logo">TARTARUS</div><div class="login-sub">กรุณาสแกน QR Code ของทีมคุณ</div></div></div>`;
+        document.body.innerHTML = `
+          <div class="login-wrap">
+            <div class="login-card">
+              <div class="login-logo">TARTARUS</div>
+              <div class="login-sub">ไม่พบข้อมูลทีมของคุณ<br>กรุณาสแกน QR Code ใหม่อีกครั้ง</div>
+              <button class="btn btn-ghost btn-full mt-16" onclick="camperLogout()">🚪 สลับบัญชี Google</button>
+            </div>
+          </div>`;
       }
       return;
     }
 
-    // มี teamId — เช็คว่าเคย register ไว้ไหม
-    const existing = DB.getCampers().find(c => c.uid === uid && c.teamId === teamId);
+    // มี teamId — เช็คว่าเคย register ไว้กับทีมไหนหรือยัง
+    const allCampers = DB.getCampers();
+    const registeredElsewhere = allCampers.find(c => c.uid === uid && c.teamId !== teamId);
+    
+    if (registeredElsewhere) {
+      // ลงทะเบียนไว้กับทีมอื่นแล้ว
+      const otherTeam = DB.getTeam(registeredElsewhere.teamId);
+      document.body.innerHTML = `
+        <div class="login-wrap">
+          <div class="login-card">
+            <div class="login-rune">⚠️</div>
+            <div class="login-logo">WRONG TEAM</div>
+            <div class="login-sub">
+              คุณได้ลงทะเบียนไว้กับทีม <b style="color:${otherTeam?.color||'#fff'}">${otherTeam?.name||registeredElsewhere.teamId}</b> แล้ว<br>
+              ไม่สามารถเข้าร่วมทีมอื่นได้
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px" class="mt-24">
+              <button class="btn btn-primary btn-full" onclick="location.href='?team=${registeredElsewhere.teamId}'">🏰 กลับไปยังทีมของคุณ</button>
+              <button class="btn btn-ghost btn-full" onclick="camperLogout()">🚪 สลับบัญชี Google</button>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const existing = allCampers.find(c => c.uid === uid && c.teamId === teamId);
     if (existing) {
       session = { camperId: existing.id, teamId, name: existing.name, uid };
       DB.setSession(session);
       showApp();
     } else {
-      // ยังไม่เคย register — ลงทะเบียนด้วยชื่อจาก Google
+      // ยังไม่เคย register เลย — ลงทะเบียนด้วยชื่อจาก Google
       const name = user.displayName || user.email.split('@')[0];
       _doRegister(uid, name, user.photoURL);
     }
@@ -386,17 +417,39 @@ async function registerCamper() {
     const result = await AUTH.signInWithGoogle();
     const user = result.user;
     const name = user.displayName || user.email.split('@')[0];
-    // _bootDone อาจ true แล้ว — handle โดยตรงเลย
-    if (_bootDone) {
-      const existing = DB.getCampers().find(c => c.uid === user.uid && c.teamId === teamId);
-      if (existing) {
-        session = { camperId: existing.id, teamId, name: existing.name, uid: user.uid };
-        DB.setSession(session);
-        document.getElementById('registerWrap').style.display = 'none';
-        showApp();
-      } else {
-        _doRegister(user.uid, name, user.photoURL);
-      }
+    
+    // Check if registered elsewhere
+    const allCampers = DB.getCampers();
+    const registeredElsewhere = allCampers.find(c => c.uid === user.uid && c.teamId !== teamId);
+    
+    if (registeredElsewhere) {
+      const otherTeam = DB.getTeam(registeredElsewhere.teamId);
+      document.body.innerHTML = `
+        <div class="login-wrap">
+          <div class="login-card">
+            <div class="login-rune">⚠️</div>
+            <div class="login-logo">WRONG TEAM</div>
+            <div class="login-sub">
+              คุณได้ลงทะเบียนไว้กับทีม <b style="color:${otherTeam?.color||'#fff'}">${otherTeam?.name||registeredElsewhere.teamId}</b> แล้ว<br>
+              ไม่สามารถเข้าร่วมทีมอื่นได้
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px" class="mt-24">
+              <button class="btn btn-primary btn-full" onclick="location.href='?team=${registeredElsewhere.teamId}'">🏰 กลับไปยังทีมของคุณ</button>
+              <button class="btn btn-ghost btn-full" onclick="camperLogout()">🚪 สลับบัญชี Google</button>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const existing = allCampers.find(c => c.uid === user.uid && c.teamId === teamId);
+    if (existing) {
+      session = { camperId: existing.id, teamId, name: existing.name, uid: user.uid };
+      DB.setSession(session);
+      document.getElementById('registerWrap').style.display = 'none';
+      showApp();
+    } else {
+      _doRegister(user.uid, name, user.photoURL);
     }
   } catch(e) {
     if (e.code !== 'auth/popup-closed-by-user') {

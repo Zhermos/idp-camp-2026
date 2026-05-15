@@ -248,9 +248,8 @@
               <div class="card-header"><span class="card-title" style="color:#f87171">⚠️ Reset ระบบ</span></div>
               <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
                 <button class="btn btn-danger btn-full" onclick="confirmReset('scores')">🔄 Reset คะแนน (คงน้องไว้)</button>
-                <button class="btn btn-danger btn-full" onclick="confirmReset('all')" style="background:rgba(192,57,43,.2)">💣 Reset ทั้งหมด (ล้างสมบูรณ์)</button>
-                <div style="font-size:11px;color:var(--text-shadow);line-height:1.6">Reset คะแนน: ล้างคะแนน + submissions ทั้งหมด แต่คงน้องและภารกิจไว้<br>Reset ทั้งหมด: ล้าง localStorage ทั้งหมด (ไม่สามารถกู้คืนได้)</div>
-              </div>
+                <button class="btn btn-danger btn-full" onclick="confirmReset('all')" style="background:rgba(231,76,60,.3);border:1px solid #e74c3c">☢️ NUCLEAR RESET (ล้างระบบเบ็ดเสร็จ)</button>
+                <div style="font-size:11px;color:var(--text-shadow);line-height:1.6">Reset คะแนน: ล้างเฉพาะคะแนน แต่คงรายชื่อน้องไว้<br>Nuclear Reset: ล้างทั้ง Firebase และเครื่อง Admin (ต้องใช้รหัสผ่าน)</div>              </div>
             </div>
           </div>
 
@@ -915,17 +914,37 @@ async function confirmDeleteFirebase() {
   setTimeout(() => status.textContent = '', 3000);
 }
 
+async function nuclearReset() {
+  const pin = prompt('กรุณาใส่รหัส PIN Admin เพื่อยืนยัน (Nuclear Option):');
+  if (pin !== '9999') { 
+    if (pin !== null) alert('❌ รหัส PIN ไม่ถูกต้อง'); 
+    return; 
+  }
+  
+  const confirmText = prompt('คำเตือน: นี่คือการล้างข้อมูลเบ็ดเสร็จ (Nuclear Option)\nพิมพ์คำว่า "NUCLEAR" เพื่อยืนยันการลบถาวร:');
+  if (confirmText !== 'NUCLEAR') { 
+    if (confirmText !== null) alert('❌ การยืนยันไม่ถูกต้อง ยกเลิกการลบ'); 
+    return; 
+  }
+  
+  if (confirm('💣 ยืนยันครั้งสุดท้าย? ข้อมูลทั้งหมดบน Firebase และเครื่องนี้จะถูกลบถาวรและไม่สามารถกู้คืนได้!')) {
+    DB.resetAll();
+    alert('☢️ NUCLEAR RESET COMPLETE! ระบบกำลังเริ่มต้นใหม่...');
+    location.reload();
+  }
+}
+
 function confirmReset(type) {
-  const titles = { scores:'Reset คะแนนทั้งหมด?', all:'Reset ทั้งหมด?' };
-  const subs   = { scores:'ลบคะแนน + submissions ทั้งหมด (ข้อมูลน้องและภารกิจยังอยู่)', all:'ล้าง localStorage ทั้งหมด ไม่สามารถกู้คืนได้!' };
+  if (type === 'all') { nuclearReset(); return; }
+  const titles = { scores:'Reset คะแนนทั้งหมด?' };
+  const subs   = { scores:'ลบคะแนน + submissions ทั้งหมด (ข้อมูลน้องและภารกิจยังอยู่)' };
   document.getElementById('confirmTitle').textContent = titles[type];
   document.getElementById('confirmSub').textContent   = subs[type];
   document.getElementById('confirmOkBtn').onclick = () => {
     if (type==='scores') DB.resetScoresOnly();
-    else DB.resetAll();
     document.getElementById('confirmModal').classList.remove('open');
     renderSidebar(); renderExportPage();
-    showToast(type==='all'?'💣 Reset สมบูรณ์':'🔄 Reset คะแนนแล้ว', type==='all'?'error':'success');
+    showToast('🔄 Reset คะแนนแล้ว', 'success');
   };
   document.getElementById('confirmModal').classList.add('open');
 }
