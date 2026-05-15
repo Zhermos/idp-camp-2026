@@ -330,7 +330,7 @@ function waitForSync(ms = 1500) {
 
 // ── Card Definitions ───────────────────────────────────
 const CARD_ABILITIES = {
-  steal:      { id:'steal',      icon:'⚡', name:'Steal',        desc:'ขโมยคะแนนจากทีมเป้าหมาย',                   needsTarget:true,  rarity:'rare'      },
+  steal:      { id:'steal',      icon:'⚡', name:'Steal',        desc:'ขโมยคะแนนจากทีมเป้าหมาย',                   needsTarget:true,  rarity:'common'    },
   aegis:      { id:'aegis',      icon:'🛡️', name:'Aegis Shield',  desc:'ป้องกันการโจมตี 1 ครั้ง',                   needsTarget:false, rarity:'rare'      },
   reflect:    { id:'reflect',    icon:'🔄', name:'Reflect',       desc:'สะท้อนการโจมตีกลับ 2 เท่า (ใช้ตอนโดนโจมตี)',needsTarget:false, rarity:'legendary' },
   multiplier: { id:'multiplier', icon:'🔥', name:'Multiplier',    desc:'คูณคะแนนภารกิจถัดไป x2',                    needsTarget:false, rarity:'legendary' },
