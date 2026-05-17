@@ -411,9 +411,9 @@ function boot() {
       DB.setSession(session);
       showApp();
     } else {
-      // ยังไม่เคย register เลย — ลงทะเบียนด้วยชื่อจาก Google
-      const name = user.displayName || user.email.split('@')[0];
-      _doRegister(uid, name, user.photoURL);
+      // ยังไม่เคย register เลย — ไปหน้า Profile Setup
+      _pendingUser = user;
+      showProfileSetup(user);
     }
   });
 
