@@ -271,9 +271,40 @@ const DB = {
     const a = this.getActivities(); a.unshift({ text, time: timestamp(), ts: isoNow(), teamId: teamId||null });
     if (a.length > 50) a.pop(); save(KEYS.activities, a);
   },
-  getCountdown() { return load(KEYS.countdown, { endTs: null, label: 'เหลือเวลา' }); },
-  setCountdown(h, m, label) { save(KEYS.countdown, { endTs: Date.now() + (h*3600+m*60)*1000, label: label||'เหลือเวลา' }); },
-  getCountdownRemaining() { const {endTs} = this.getCountdown(); return endTs ? Math.max(0, Math.floor((endTs-Date.now())/1000)) : null; },
+  getCountdown() { return load(KEYS.countdown, { endTs: null, label: 'เหลือเวลา', isPaused: false, remainingSecs: 0 }); },
+  setCountdown(h, m, label) { 
+    const secs = (h*3600+m*60);
+    save(KEYS.countdown, { 
+      endTs: Date.now() + secs*1000, 
+      label: label||'เหลือเวลา',
+      isPaused: false,
+      remainingSecs: secs
+    }); 
+  },
+  getCountdownRemaining() { 
+    const { endTs, isPaused, remainingSecs } = this.getCountdown();
+    if (isPaused) return remainingSecs;
+    return endTs ? Math.max(0, Math.floor((endTs-Date.now())/1000)) : null;
+  },
+  pauseCountdown() {
+    const data = this.getCountdown();
+    if (data.isPaused || !data.endTs) return;
+    const remaining = Math.max(0, Math.floor((data.endTs - Date.now()) / 1000));
+    data.isPaused = true;
+    data.remainingSecs = remaining;
+    data.endTs = null;
+    save(KEYS.countdown, data);
+  },
+  resumeCountdown() {
+    const data = this.getCountdown();
+    if (!data.isPaused) return;
+    data.isPaused = false;
+    data.endTs = Date.now() + (data.remainingSecs * 1000);
+    save(KEYS.countdown, data);
+  },
+  clearCountdown() {
+    save(KEYS.countdown, { endTs: null, label: 'เหลือเวลา', isPaused: false, remainingSecs: 0 });
+  },
 
   // Session = UID-based (campers), stored in localStorage only
   getSession() { return load(KEYS.session, null); },

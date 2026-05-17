@@ -40,9 +40,32 @@
         <span class="team-badge-score" id="headerTeamScore"></span>
       </div>
       <span class="role-chip camper">👤 CAMPER</span>
-      <div class="user-avatar" id="headerAvatar" title="เปลี่ยนบัญชี" onclick="camperLogout()" style="cursor:pointer">?</div>
+      <div class="user-avatar" id="headerAvatar" title="โปรไฟล์" onclick="openProfileEditor()" style="cursor:pointer">?</div>
     </div>
   </header>
+
+  <!-- PROFILE EDITOR MODAL -->
+  <div id="profileModal" class="modal">
+    <div class="modal-content">
+      <div class="card">
+        <div class="card-header"><span class="card-title">🦉 ตั้งค่าโปรไฟล์</span></div>
+        <div class="card-body" style="text-align:center">
+          <div class="sidebar-crest" id="profileModalAvatar" style="width:100px; height:100px; font-size:50px; margin:0 auto 24px; background:var(--bg-panel); border:2px solid var(--gold); border-radius:50%; display:flex; align-items:center; justify-content:center; overflow:hidden">?</div>
+          
+          <div class="form-group" style="text-align:left">
+            <label class="form-label">ชื่อเล่นในค่าย</label>
+            <input class="form-input" id="editNickname" placeholder="ชื่อเล่นของคุณ..." maxlength="15" style="text-align:center; font-size:18px;">
+          </div>
+          
+          <div style="display:flex; gap:10px" class="mt-24">
+            <button class="btn btn-ghost btn-full" onclick="closeProfileEditor()">ยกเลิก</button>
+            <button class="btn btn-primary btn-full" onclick="saveProfileChanges()">บันทึก ⚔️</button>
+          </div>
+          <div style="font-size:11px; color:var(--text-shadow); margin-top:16px;">รูปภาพโปรไฟล์ถูกดึงมาจาก Google Account ของคุณ</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- REGISTER (shown if no session) -->
   <div id="registerWrap" style="display:none">
@@ -88,7 +111,6 @@
         <div class="nav-item"        data-page="submissions" onclick="navigate('submissions')"> <span class="nav-icon">📜</span><span>งานของฉัน</span>     <span class="nav-badge" id="pendingBadge" style="display:none">0</span></div>
         <div class="nav-item"        data-page="armory"      onclick="navigate('armory')">      <span class="nav-icon">🎴</span><span>คลังแสง</span>       <span class="nav-badge" id="armoryBadge" style="display:none">0</span></div>
         <div class="nav-item"        data-page="leaderboard" onclick="navigate('leaderboard')"> <span class="nav-icon">🏛</span><span>Leaderboard</span></div>
-        <div class="nav-item"        data-page="profile"     onclick="navigate('profile')">     <span class="nav-icon">🦉</span><span>โปรไฟล์</span></div>
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-section">
@@ -538,11 +560,56 @@ function _doRegister(uid, name, photoURL) {
   showApp();
 }
 
+function openProfileEditor() {
+  if (!session) return;
+  const camper = DB.getCamper(session.camperId);
+  if (!camper) return;
+  
+  document.getElementById('editNickname').value = camper.name;
+  const modalAvatar = document.getElementById('profileModalAvatar');
+  if (camper.photoURL) {
+    modalAvatar.innerHTML = `<img src="${camper.photoURL}" style="width:100%; height:100%; object-fit:cover;">`;
+  } else {
+    modalAvatar.textContent = '👤';
+  }
+  
+  document.getElementById('profileModal').classList.add('open');
+}
+
+function closeProfileEditor() {
+  document.getElementById('profileModal').classList.remove('open');
+}
+
+async function saveProfileChanges() {
+  const newName = document.getElementById('editNickname').value.trim();
+  if (!newName) {
+    alert('กรุณาใส่ชื่อเล่นด้วยครับ');
+    return;
+  }
+  
+  const camper = DB.getCamper(session.camperId);
+  if (camper) {
+    camper.name = newName;
+    DB.upsertCamper(camper);
+    
+    // Update session
+    session.name = newName;
+    DB.setSession(session);
+    
+    // Update UI
+    const welcome = document.getElementById('sidebarQuote');
+    if (welcome) welcome.textContent = `ยินดีต้อนรับ, ${newName}`;
+    
+    alert('บันทึกการเปลี่ยนแปลงเรียบร้อยแล้ว');
+    closeProfileEditor();
+  }
+}
+
 async function camperLogout() {
-  if (!confirm('เปลี่ยนบัญชี Google ไหม?')) return;
+  // ซ่อนปุ่มนี้ไปแล้ว แต่เก็บฟังก์ชันไว้เผื่อต้องเรียกใช้จาก console กรณีฉุกเฉิน
+  if (!confirm('ยืนยันการออกจากระบบ?')) return;
   DB.clearSession();
   await AUTH.signOut();
-  // reload เพื่อให้ onAuthStateChanged trigger ใหม่
   location.reload();
 }
 
@@ -1029,10 +1096,11 @@ function startCountdown() {
     const secs = DB.getCountdownRemaining();
     if (secs === null) { wrap.style.display='none'; return; }
     wrap.style.display = 'flex';
-    const { label } = DB.getCountdown();
-    if (labelEl) labelEl.textContent = label || 'เหลือเวลา';
+    const cd = DB.getCountdown();
+    if (labelEl) labelEl.textContent = (cd.label || 'เหลือเวลา') + (cd.isPaused ? ' (พัก)' : '');
     const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
     el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    el.style.opacity = cd.isPaused ? '0.5' : '1';
   }
   tick();
   setInterval(tick, 1000);
