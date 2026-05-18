@@ -680,22 +680,30 @@ const CARDS = {
       return { status: 'pending', count: vote.count };
     }
   },
+listenVotes(teamId, callback) {
+  if (!_fbReady || !_db) return;
+  const ref = _db.ref(`cards/votes/${teamId}`);
+  ref.on('value', snap => {
+    if (!snap.exists()) { 
+      callback(null); 
+      return; 
+    }
+    const votes = Object.values(snap.val());
+    const vote = votes[0];
 
-  listenVotes(teamId, callback) {
-    if (!_fbReady || !_db) return;
-    _db.ref(`cards/votes/${teamId}`).on('value', snap => {
-      if (!snap.exists()) { callback(null); return; }
-      const votes = Object.values(snap.val());
-      const vote = votes[0];
-      // เช็คการหมดอายุที่ฝั่ง client ด้วย
-      if (vote && vote.status === 'pending' && Date.now() > vote.expiresAt) {
+    if (vote && vote.status === 'pending') {
+      const exp = parseInt(vote.expiresAt);
+      if (isNaN(exp) || Date.now() > exp) {
+        // ถ้าหมดเวลาแล้ว ให้ลบข้อมูลใน Firebase ด้วยเลยเพื่อความสะอาด
+        ref.remove();
         callback(null);
         return;
       }
-      callback(vote || null);
-    });
-  },
-};
+    }
+    callback(vote || null);
+  });
+},
+
 
 // helper สร้าง code 6 หลัก
 function _genCode() {
