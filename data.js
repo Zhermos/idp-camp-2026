@@ -588,12 +588,20 @@ const CARDS = {
   // ── VOTING SYSTEM ────────────────────────────────────
 
   async getVoteConfig() {
+    if (!_fbReady || !_db) return { target: 3, timeout: 5 };
     const snap = await _db.ref('cards/voteConfig').once('value');
-    return snap.val() || { target: 3, timeout: 5 }; // default 3 คน 5 นาที
+    const val = snap.val() || {};
+    return { 
+      target: Number(val.target) || 3, 
+      timeout: Number(val.timeout) || 5 
+    };
   },
 
   async setVoteConfig(config) {
-    if (_fbReady && _db) await _db.ref('cards/voteConfig').set(config);
+    if (_fbReady && _db) await _db.ref('cards/voteConfig').set({
+      target: Number(config.target),
+      timeout: Number(config.timeout)
+    });
   },
 
   async startVote(cardId, camperId, camperName, teamId, targetTeamId) {
@@ -609,7 +617,8 @@ const CARDS = {
 
     const config = await this.getVoteConfig();
     const voteId = 'vote_' + Date.now();
-    const expiresAt = Date.now() + (config.timeout * 60 * 1000);
+    const timeout = Number(config.timeout) || 5;
+    const expiresAt = Number(Date.now() + (timeout * 60 * 1000));
 
     const vote = {
       id: voteId,
@@ -620,7 +629,7 @@ const CARDS = {
       targetTeamId: targetTeamId || null,
       approvals: { [camperId]: true },
       count: 1,
-      target: config.target,
+      target: Number(config.target),
       expiresAt,
       createdAt: isoNow(),
       status: 'pending'
@@ -634,7 +643,7 @@ const CARDS = {
       fromTeamId: teamId, 
       cardId, 
       camperName, 
-      msg: `🗳️ ${camperName} ต้องการใช้การ์ด ${CARD_ABILITIES[card.ability]?.name}! ต้องการ ${config.target} โหวต (${config.timeout} นาที)` 
+      msg: `🗳️ ${camperName} ต้องการใช้การ์ด ${CARD_ABILITIES[card.ability]?.name}! ต้องการ ${config.target} โหวต (${timeout} นาที)` 
     });
 
     return { ok:true, voteId };
@@ -677,19 +686,29 @@ const CARDS = {
 
   listenVotes(teamId, callback) {
     if (!_fbReady || !_db) return;
-    _db.ref(`cards/votes/${teamId}`).on('value', snap => {
-      if (!snap.exists()) { callback(null); return; }
+    const ref = _db.ref(`cards/votes/${teamId}`);
+    ref.on('value', snap => {
+      if (!snap.exists()) { 
+        callback(null); 
+        return; 
+      }
       const votes = Object.values(snap.val());
       const vote = votes[0];
-      // เช็คการหมดอายุที่ฝั่ง client ด้วย
-      if (vote && vote.status === 'pending' && Date.now() > vote.expiresAt) {
-        callback(null);
-        return;
+
+      if (vote && vote.status === 'pending') {
+        const exp = parseInt(vote.expiresAt);
+        if (isNaN(exp) || Date.now() > exp) {
+          // ถ้าหมดเวลาแล้ว ให้ลบข้อมูลใน Firebase ด้วยเลยเพื่อความสะอาด
+          ref.remove();
+          callback(null);
+          return;
+        }
       }
       callback(vote || null);
     });
   },
 };
+
 
 // helper สร้าง code 6 หลัก
 function _genCode() {

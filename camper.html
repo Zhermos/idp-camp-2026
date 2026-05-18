@@ -161,7 +161,10 @@
               <div style="font-family:var(--font-title); font-size:14px; color:var(--gold-bright)" id="voteTitle">ทีมกำลังโหวตใช้การ์ด...</div>
               <div style="font-size:12px; color:var(--text-shadow)" id="voteDesc">ต้องการอีก 2 โหวต เพื่อเปิดใช้งาน</div>
             </div>
-            <button class="btn btn-primary btn-sm" id="voteBtn" onclick="approveCurrentVote()">👍 โหวต</button>
+            <div style="display:flex; flex-direction:column; gap:6px">
+              <button class="btn btn-primary btn-sm" id="voteBtn" onclick="approveCurrentVote()">👍 โหวต</button>
+              <button class="btn btn-ghost btn-sm" style="font-size:9px; padding:2px 4px" onclick="location.reload()">🔄 รีเฟรช</button>
+            </div>
           </div>
         </div>
 
@@ -891,29 +894,49 @@ function renderVoteBanner() {
     if (_voteTimer) { clearInterval(_voteTimer); _voteTimer = null; }
     return; 
   }
-  
+
+  // เช็คเบื้องต้นถ้าหมดเวลาแล้วไม่ต้องโชว์
+  const exp = Number(_currentVote.expiresAt);
+  if (!isNaN(exp) && Date.now() > exp) {
+    el.style.display = 'none';
+    if (_voteTimer) { clearInterval(_voteTimer); _voteTimer = null; }
+    return;
+  }
+
   el.style.display = 'block';
   const ab = CARD_ABILITIES[_currentVote.card.ability];
   document.getElementById('voteIcon').textContent = ab?.icon || '🗳️';
   document.getElementById('voteTitle').textContent = `${_currentVote.camperName} ต้องการใช้ ${ab?.name}`;
-  
+
   if (!_voteTimer) {
     _voteTimer = setInterval(() => {
       if (!_currentVote) { clearInterval(_voteTimer); _voteTimer = null; return; }
-      const diff = _currentVote.expiresAt - Date.now();
+
+      const expiresAt = Number(_currentVote.expiresAt);
+      if (isNaN(expiresAt) || expiresAt === 0) {
+        document.getElementById('voteDesc').textContent = '⏳ รอข้อมูลเวลา...';
+        return;
+      }
+
+      const diff = expiresAt - Date.now();
       if (diff <= 0) {
         document.getElementById('voteDesc').textContent = '❌ หมดเวลาโหวต';
         clearInterval(_voteTimer);
         _voteTimer = null;
+        // ปิดแบนเนอร์หลังจากโชว์ว่าหมดเวลาแล้ว 3 วินาที
+        setTimeout(() => { 
+          const banner = document.getElementById('activeVoteBanner');
+          if (banner) banner.style.display = 'none';
+          _currentVote = null; 
+        }, 3000);
         return;
       }
       const m = Math.floor(diff / 60000);
       const s = Math.floor((diff % 60000) / 1000);
-      const remaining = Math.max(0, _currentVote.target - _currentVote.count);
+      const remaining = Math.max(0, (Number(_currentVote.target) || 3) - (Number(_currentVote.count) || 0));
       document.getElementById('voteDesc').textContent = `ต้องการอีก ${remaining} โหวต · ⏳ ${m}:${String(s).padStart(2,'0')}`;
     }, 1000);
   }
-  
   const btn = document.getElementById('voteBtn');
   const alreadyApproved = _currentVote.approvals && _currentVote.approvals[session.camperId];
   if (alreadyApproved) {
