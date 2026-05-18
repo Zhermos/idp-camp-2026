@@ -330,7 +330,7 @@ function waitForSync(ms = 1500) {
 
 // ── Card Definitions ───────────────────────────────────
 const CARD_ABILITIES = {
-  steal:      { id:'steal',      icon:'⚡', name:'Steal',        desc:'ขโมยคะแนนจากทีมเป้าหมาย',                   needsTarget:true,  rarity:'rare'      },
+  steal:      { id:'steal',      icon:'⚡', name:'Steal',        desc:'ขโมยคะแนนจากทีมเป้าหมาย',                   needsTarget:true,  rarity:'common'    },
   aegis:      { id:'aegis',      icon:'🛡️', name:'Aegis Shield',  desc:'ป้องกันการโจมตี 1 ครั้ง',                   needsTarget:false, rarity:'rare'      },
   reflect:    { id:'reflect',    icon:'🔄', name:'Reflect',       desc:'สะท้อนการโจมตีกลับ 2 เท่า (ใช้ตอนโดนโจมตี)',needsTarget:false, rarity:'legendary' },
   multiplier: { id:'multiplier', icon:'🔥', name:'Multiplier',    desc:'คูณคะแนนภารกิจถัดไป x2',                    needsTarget:false, rarity:'legendary' },
@@ -359,11 +359,45 @@ const CARDS = {
   },
 
   // สร้างการ์ดใหม่ (admin)
-  createCard(ability, points, rarity, note) {
+  createCard(ability, points, rarity, note, usageType) {
     const code = _genCode();
-    const card = { id: 'card_' + nextId(), code, ability, points: points||100, rarity: rarity||'common', note: note||'', usedBy: null, usedAt: null, createdAt: isoNow() };
+    const card = { 
+      id: 'card_' + nextId(), 
+      code, 
+      ability, 
+      points: points||100, 
+      rarity: rarity||'common', 
+      note: note||'', 
+      usageType: usageType||'direct', // 'direct' หรือ 'vote'
+      usedBy: null, 
+      usedAt: null, 
+      createdAt: isoNow() 
+    };
     if (_fbReady && _db) _db.ref('cards/deck/' + card.id).set(card);
     return card;
+  },
+
+  // ลบการ์ด (admin)
+  async deleteCard(cardId) {
+    if (!_fbReady || !_db) return;
+    // อ่านข้อมูลก่อนเพื่อดูว่าใครถืออยู่
+    const snap = await _db.ref('cards/deck/' + cardId).once('value');
+    const card = snap.val();
+    if (card && card.usedBy) {
+      await _db.ref(`cards/hand/${card.usedBy}/${cardId}`).remove();
+    }
+    // เช็คว่ามีการโหวตที่ใช้การ์ดใบนี้อยู่ไหม ถ้ามีให้ลบออก
+    const teamsSnap = await _db.ref('cards/votes').once('value');
+    const allVotes = teamsSnap.val() || {};
+    for (const teamId in allVotes) {
+      for (const voteId in allVotes[teamId]) {
+        if (allVotes[teamId][voteId].card.id === cardId) {
+          await _db.ref(`cards/votes/${teamId}/${voteId}`).remove();
+        }
+      }
+    }
+    // ลบจาก deck
+    await _db.ref('cards/deck/' + cardId).remove();
   },
 
   // ดึงการ์ดทั้งหมด (admin)
@@ -549,6 +583,111 @@ const CARDS = {
   // ลบ buff เฉพาะทีม (admin)
   async removeBuff(teamId, buffType) {
     if (_fbReady && _db) await _db.ref(`cards/buffs/${teamId}/${buffType}`).remove();
+  },
+
+  // ── VOTING SYSTEM ────────────────────────────────────
+
+  async getVoteConfig() {
+    const snap = await _db.ref('cards/voteConfig').once('value');
+    return snap.val() || { target: 3, timeout: 5 }; // default 3 คน 5 นาที
+  },
+
+  async setVoteConfig(config) {
+    if (_fbReady && _db) await _db.ref('cards/voteConfig').set(config);
+  },
+
+  async startVote(cardId, camperId, camperName, teamId, targetTeamId) {
+    if (!_fbReady || !_db) return { ok:false, msg:'Firebase ไม่พร้อม' };
+    
+    // เช็คว่ามีการโหวตค้างอยู่ไหม
+    const existing = await _db.ref(`cards/votes/${teamId}`).once('value');
+    if (existing.exists()) return { ok:false, msg:'มีการโหวตอื่นกำลังดำเนินการอยู่' };
+
+    const snap = await _db.ref(`cards/hand/${camperId}/${cardId}`).once('value');
+    const card = snap.val();
+    if (!card) return { ok:false, msg:'ไม่พบการ์ดในมือ' };
+
+    const config = await this.getVoteConfig();
+    const voteId = 'vote_' + Date.now();
+    const expiresAt = Date.now() + (config.timeout * 60 * 1000);
+
+    const vote = {
+      id: voteId,
+      card,
+      camperId,
+      camperName,
+      teamId,
+      targetTeamId: targetTeamId || null,
+      approvals: { [camperId]: true },
+      count: 1,
+      target: config.target,
+      expiresAt,
+      createdAt: isoNow(),
+      status: 'pending'
+    };
+
+    await _db.ref(`cards/votes/${teamId}/${voteId}`).set(vote);
+    
+    // แจ้งเตือนเพื่อนในทีม
+    await this._pushCardEvent({ 
+      type: 'vote_start', 
+      fromTeamId: teamId, 
+      cardId, 
+      camperName, 
+      msg: `🗳️ ${camperName} ต้องการใช้การ์ด ${CARD_ABILITIES[card.ability]?.name}! ต้องการ ${config.target} โหวต (${config.timeout} นาที)` 
+    });
+
+    return { ok:true, voteId };
+  },
+
+  async approveVote(teamId, voteId, camperId, camperName) {
+    if (!_fbReady || !_db) return;
+    const ref = _db.ref(`cards/votes/${teamId}/${voteId}`);
+    const snap = await ref.once('value');
+    if (!snap.exists()) return;
+    const vote = snap.val();
+    if (vote.status !== 'pending') return;
+    
+    // เช็คเวลาหมดอายุ
+    if (Date.now() > vote.expiresAt) {
+      vote.status = 'expired';
+      await ref.set(vote);
+      setTimeout(() => ref.remove(), 3000);
+      return { status: 'expired' };
+    }
+
+    if (vote.approvals[camperId]) return;
+
+    vote.approvals[camperId] = true;
+    vote.count = Object.keys(vote.approvals).length;
+
+    if (vote.count >= vote.target) {
+      vote.status = 'completed';
+      await ref.set(vote);
+      // Execute card!
+      const result = await this.activateCard(vote.card.id, vote.camperId, vote.camperName, vote.teamId, vote.targetTeamId);
+      // ลบโหวตหลังจากสำเร็จ (หรือเก็บไว้ซักพัก)
+      setTimeout(() => ref.remove(), 2000);
+      return { status: 'completed', result };
+    } else {
+      await ref.set(vote);
+      return { status: 'pending', count: vote.count };
+    }
+  },
+
+  listenVotes(teamId, callback) {
+    if (!_fbReady || !_db) return;
+    _db.ref(`cards/votes/${teamId}`).on('value', snap => {
+      if (!snap.exists()) { callback(null); return; }
+      const votes = Object.values(snap.val());
+      const vote = votes[0];
+      // เช็คการหมดอายุที่ฝั่ง client ด้วย
+      if (vote && vote.status === 'pending' && Date.now() > vote.expiresAt) {
+        callback(null);
+        return;
+      }
+      callback(vote || null);
+    });
   },
 };
 

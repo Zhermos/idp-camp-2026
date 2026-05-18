@@ -53,11 +53,25 @@
         <div class="login-sub">CAMP · MMXXV</div>
         <div id="teamWelcome" style="text-align:center; margin-bottom:24px; font-family:var(--font-title); font-size:18px; letter-spacing:1px;"></div>
         <div id="registerStatus" style="text-align:center; font-size:13px; color:var(--text-shadow); margin-bottom:12px; min-height:20px;"></div>
-        <button class="btn btn-primary btn-full mt-8" id="googleRegisterBtn" onclick="registerCamper()">
-          <svg width="18" height="18" viewBox="0 0 48 48" style="vertical-align:middle;margin-right:8px"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.5 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.6l6.2 5.2C36.9 36.2 44 30.9 44 24c0-1.3-.1-2.7-.4-3.9z"/></svg>
-          เข้าสู่ค่ายด้วย Google
-        </button>
-        <div style="font-size:11px; color:var(--text-shadow); text-align:center; margin-top:16px;">ระบบจะใช้ชื่อจาก Google Account ของคุณ</div>
+        
+        <div id="loginSection">
+          <button class="btn btn-primary btn-full mt-8" id="googleRegisterBtn" onclick="registerCamper()">
+            <svg width="18" height="18" viewBox="0 0 48 48" style="vertical-align:middle;margin-right:8px"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.3 35.5 26.8 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.6l6.2 5.2C36.9 36.2 44 30.9 44 24c0-1.3-.1-2.7-.4-3.9z"/></svg>
+            เข้าสู่ค่ายด้วย Google
+          </button>
+          <div style="font-size:11px; color:var(--text-shadow); text-align:center; margin-top:16px;">เข้าสู่ระบบเพื่อตั้งชื่อและรูปโปรไฟล์</div>
+        </div>
+
+        <div id="profileSetupSection" style="display:none; text-align:center;">
+          <div class="sidebar-crest" id="setupAvatar" style="width:80px; height:80px; font-size:40px; margin:0 auto 20px; background:var(--bg-panel); border:2px solid var(--gold); border-radius:50%; display:flex; align-items:center; justify-content:center; overflow:hidden">?</div>
+          <div class="form-group" style="text-align:left">
+            <label class="form-label">ชื่อเล่นในค่าย</label>
+            <input class="form-input" id="setupNickname" placeholder="ตั้งชื่อเล่นของคุณ..." maxlength="15" style="text-align:center; font-size:18px;">
+          </div>
+          <button class="btn btn-primary btn-full mt-16" onclick="finishRegistration()">เข้าสู่ค่าย ⚔️</button>
+          <div style="font-size:11px; color:var(--text-shadow); margin-top:12px;">คุณสามารถเปลี่ยนชื่อภายหลังได้ในหน้าโปรไฟล์</div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -136,6 +150,18 @@
               </div>
             </div>
             <div id="redeemMsg" style="font-size:13px;min-height:18px;text-align:center"></div>
+          </div>
+        </div>
+
+        <!-- Active Vote Banner -->
+        <div id="activeVoteBanner" class="card mt-16" style="display:none; border:2px solid var(--gold); box-shadow:0 0 15px rgba(228,190,110,0.3)">
+          <div class="card-body" style="display:flex; align-items:center; gap:16px">
+            <div style="font-size:32px" id="voteIcon">🗳️</div>
+            <div style="flex:1">
+              <div style="font-family:var(--font-title); font-size:14px; color:var(--gold-bright)" id="voteTitle">ทีมกำลังโหวตใช้การ์ด...</div>
+              <div style="font-size:12px; color:var(--text-shadow)" id="voteDesc">ต้องการอีก 2 โหวต เพื่อเปิดใช้งาน</div>
+            </div>
+            <button class="btn btn-primary btn-sm" id="voteBtn" onclick="approveCurrentVote()">👍 โหวต</button>
           </div>
         </div>
 
@@ -320,19 +346,50 @@ function boot() {
         DB.setSession(session);
         showApp();
       } else {
-        document.body.innerHTML = `<div class="login-wrap"><div class="login-card"><div class="login-logo">TARTARUS</div><div class="login-sub">กรุณาสแกน QR Code ของทีมคุณ</div></div></div>`;
+        document.body.innerHTML = `
+          <div class="login-wrap">
+            <div class="login-card">
+              <div class="login-logo">TARTARUS</div>
+              <div class="login-sub">ไม่พบข้อมูลทีมของคุณ<br>กรุณาสแกน QR Code ใหม่อีกครั้ง</div>
+              <button class="btn btn-ghost btn-full mt-16" onclick="camperLogout()">🚪 สลับบัญชี Google</button>
+            </div>
+          </div>`;
       }
       return;
     }
 
-    // มี teamId — เช็คว่าเคย register ไว้ไหม
-    const existing = DB.getCampers().find(c => c.uid === uid && c.teamId === teamId);
+    // มี teamId — เช็คว่าเคย register ไว้กับทีมไหนหรือยัง
+    const allCampers = DB.getCampers();
+    const registeredElsewhere = allCampers.find(c => c.uid === uid && c.teamId !== teamId);
+    
+    if (registeredElsewhere) {
+      // ลงทะเบียนไว้กับทีมอื่นแล้ว
+      const otherTeam = DB.getTeam(registeredElsewhere.teamId);
+      document.body.innerHTML = `
+        <div class="login-wrap">
+          <div class="login-card">
+            <div class="login-rune">⚠️</div>
+            <div class="login-logo">WRONG TEAM</div>
+            <div class="login-sub">
+              คุณได้ลงทะเบียนไว้กับทีม <b style="color:${otherTeam?.color||'#fff'}">${otherTeam?.name||registeredElsewhere.teamId}</b> แล้ว<br>
+              ไม่สามารถเข้าร่วมทีมอื่นได้
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px" class="mt-24">
+              <button class="btn btn-primary btn-full" onclick="location.href='?team=${registeredElsewhere.teamId}'">🏰 กลับไปยังทีมของคุณ</button>
+              <button class="btn btn-ghost btn-full" onclick="camperLogout()">🚪 สลับบัญชี Google</button>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const existing = allCampers.find(c => c.uid === uid && c.teamId === teamId);
     if (existing) {
       session = { camperId: existing.id, teamId, name: existing.name, uid };
       DB.setSession(session);
       showApp();
     } else {
-      // ยังไม่เคย register — ลงทะเบียนด้วยชื่อจาก Google
+      // ยังไม่เคย register เลย — ลงทะเบียนด้วยชื่อจาก Google
       const name = user.displayName || user.email.split('@')[0];
       _doRegister(uid, name, user.photoURL);
     }
@@ -365,6 +422,8 @@ function showRegister() {
   }
 }
 
+let _pendingUser = null;
+
 async function registerCamper() {
   const btn = document.getElementById('googleRegisterBtn');
   const status = document.getElementById('registerStatus');
@@ -373,18 +432,41 @@ async function registerCamper() {
   try {
     const result = await AUTH.signInWithGoogle();
     const user = result.user;
-    const name = user.displayName || user.email.split('@')[0];
-    // _bootDone อาจ true แล้ว — handle โดยตรงเลย
-    if (_bootDone) {
-      const existing = DB.getCampers().find(c => c.uid === user.uid && c.teamId === teamId);
-      if (existing) {
-        session = { camperId: existing.id, teamId, name: existing.name, uid: user.uid };
-        DB.setSession(session);
-        document.getElementById('registerWrap').style.display = 'none';
-        showApp();
-      } else {
-        _doRegister(user.uid, name, user.photoURL);
-      }
+    
+    // Check if registered elsewhere
+    const allCampers = DB.getCampers();
+    const registeredElsewhere = allCampers.find(c => c.uid === user.uid && c.teamId !== teamId);
+    
+    if (registeredElsewhere) {
+      const otherTeam = DB.getTeam(registeredElsewhere.teamId);
+      document.body.innerHTML = `
+        <div class="login-wrap">
+          <div class="login-card">
+            <div class="login-rune">⚠️</div>
+            <div class="login-logo">WRONG TEAM</div>
+            <div class="login-sub">
+              คุณได้ลงทะเบียนไว้กับทีม <b style="color:${otherTeam?.color||'#fff'}">${otherTeam?.name||registeredElsewhere.teamId}</b> แล้ว<br>
+              ไม่สามารถเข้าร่วมทีมอื่นได้
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px" class="mt-24">
+              <button class="btn btn-primary btn-full" onclick="location.href='?team=${registeredElsewhere.teamId}'">🏰 กลับไปยังทีมของคุณ</button>
+              <button class="btn btn-ghost btn-full" onclick="camperLogout()">🚪 สลับบัญชี Google</button>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const existing = allCampers.find(c => c.uid === user.uid && c.teamId === teamId);
+    if (existing) {
+      session = { camperId: existing.id, teamId, name: existing.name, uid: user.uid };
+      DB.setSession(session);
+      document.getElementById('registerWrap').style.display = 'none';
+      showApp();
+    } else {
+      // ยังไม่เคย register เลย — ไปหน้า Profile Setup
+      _pendingUser = user;
+      showProfileSetup(user);
     }
   } catch(e) {
     if (e.code !== 'auth/popup-closed-by-user') {
@@ -394,6 +476,33 @@ async function registerCamper() {
     }
     if (btn) btn.disabled = false;
   }
+}
+
+function showProfileSetup(user) {
+  document.getElementById('loginSection').style.display = 'none';
+  document.getElementById('profileSetupSection').style.display = 'block';
+  document.getElementById('registerStatus').textContent = 'ขั้นตอนสุดท้าย: ตั้งชื่อเล่นของคุณ';
+  
+  const nicknameInput = document.getElementById('setupNickname');
+  nicknameInput.value = user.displayName || '';
+  
+  const avatar = document.getElementById('setupAvatar');
+  if (user.photoURL) {
+    avatar.innerHTML = `<img src="${user.photoURL}" style="width:100%; height:100%; object-fit:cover;">`;
+  } else {
+    avatar.textContent = '👤';
+  }
+}
+
+function finishRegistration() {
+  const nickname = document.getElementById('setupNickname').value.trim();
+  if (!nickname) {
+    alert('กรุณาตั้งชื่อเล่นก่อนเข้าค่ายครับ');
+    return;
+  }
+  if (!_pendingUser) return;
+  
+  _doRegister(_pendingUser.uid, nickname, _pendingUser.photoURL);
 }
 
 function _doRegister(uid, name, photoURL) {
@@ -437,6 +546,8 @@ async function camperLogout() {
   location.reload();
 }
 
+let _currentVote = null;
+
 function showApp() {
   document.getElementById('appWrap').style.display = 'flex';
   renderHeader();
@@ -446,6 +557,7 @@ function showApp() {
   document.getElementById('sidebarQuote').textContent = QUOTES[Math.floor(Math.random()*QUOTES.length)];
   // Card system
   initCardListener();
+  initVoteListener();
   CARDS.getCamperCards(session.camperId).then(cards => {
     const badge = document.getElementById('armoryBadge');
     if (badge) { badge.textContent = cards.length; badge.style.display = cards.length ? 'inline' : 'none'; }
@@ -738,17 +850,85 @@ async function confirmActivate() {
   btn.disabled = true;
   const ab = CARD_ABILITIES[_activatingCard.ability];
   const targetTeamId = ab?.needsTarget ? document.getElementById('targetTeamSelect').value : null;
-  const result = await CARDS.activateCard(_activatingCard.id, session.camperId, session.name, session.teamId, targetTeamId);
-  if (result.ok) {
-    document.getElementById('activateModal').classList.remove('open');
-    renderArmory();
-    showToast('🎴 ' + result.msg, 'success');
+
+  if (_activatingCard.usageType === 'vote') {
+    const result = await CARDS.startVote(_activatingCard.id, session.camperId, session.name, session.teamId, targetTeamId);
+    if (result.ok) {
+      document.getElementById('activateModal').classList.remove('open');
+      showToast('🗳️ เริ่มการโหวตทีมแล้ว! รอเพื่อนโหวตครบ 3 คน', 'success');
+    } else {
+      document.getElementById('activateMsg').textContent = '❌ ' + result.msg;
+      document.getElementById('activateMsg').style.color = '#f87171';
+    }
   } else {
-    document.getElementById('activateMsg').textContent = '❌ ' + result.msg;
-    document.getElementById('activateMsg').style.color = '#f87171';
+    const result = await CARDS.activateCard(_activatingCard.id, session.camperId, session.name, session.teamId, targetTeamId);
+    if (result.ok) {
+      document.getElementById('activateModal').classList.remove('open');
+      renderArmory();
+      showToast('🎴 ' + result.msg, 'success');
+    } else {
+      document.getElementById('activateMsg').textContent = '❌ ' + result.msg;
+      document.getElementById('activateMsg').style.color = '#f87171';
+    }
   }
   btn.disabled = false;
   _activatingCard = null;
+}
+
+function initVoteListener() {
+  CARDS.listenVotes(session.teamId, vote => {
+    _currentVote = vote;
+    renderVoteBanner();
+  });
+}
+
+let _voteTimer = null;
+
+function renderVoteBanner() {
+  const el = document.getElementById('activeVoteBanner');
+  if (!_currentVote) { 
+    el.style.display = 'none'; 
+    if (_voteTimer) { clearInterval(_voteTimer); _voteTimer = null; }
+    return; 
+  }
+  
+  el.style.display = 'block';
+  const ab = CARD_ABILITIES[_currentVote.card.ability];
+  document.getElementById('voteIcon').textContent = ab?.icon || '🗳️';
+  document.getElementById('voteTitle').textContent = `${_currentVote.camperName} ต้องการใช้ ${ab?.name}`;
+  
+  if (!_voteTimer) {
+    _voteTimer = setInterval(() => {
+      if (!_currentVote) { clearInterval(_voteTimer); _voteTimer = null; return; }
+      const diff = _currentVote.expiresAt - Date.now();
+      if (diff <= 0) {
+        document.getElementById('voteDesc').textContent = '❌ หมดเวลาโหวต';
+        clearInterval(_voteTimer);
+        _voteTimer = null;
+        return;
+      }
+      const m = Math.floor(diff / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      const remaining = Math.max(0, _currentVote.target - _currentVote.count);
+      document.getElementById('voteDesc').textContent = `ต้องการอีก ${remaining} โหวต · ⏳ ${m}:${String(s).padStart(2,'0')}`;
+    }, 1000);
+  }
+  
+  const btn = document.getElementById('voteBtn');
+  const alreadyApproved = _currentVote.approvals && _currentVote.approvals[session.camperId];
+  if (alreadyApproved) {
+    btn.disabled = true;
+    btn.textContent = '✅ โหวตแล้ว';
+  } else {
+    btn.disabled = false;
+    btn.textContent = '👍 โหวต';
+  }
+}
+
+async function approveCurrentVote() {
+  if (!_currentVote) return;
+  await CARDS.approveVote(session.teamId, _currentVote.id, session.camperId, session.name);
+  showToast('👍 ส่งคะแนนโหวตแล้ว');
 }
 
 async function redeemCard() {
