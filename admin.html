@@ -149,10 +149,9 @@
                   <input class="form-input" id="timerLabel" value="เหลือเวลา" placeholder="เช่น เหลือเวลา">
                 </div>
               </div>
-              <div style="display:flex;gap:10px;flex-wrap:wrap">
-                <button class="btn btn-primary" onclick="setTimer()">⏱ เริ่มใหม่/เริ่มนับถอยหลัง</button>
-                <button class="btn btn-warning" id="btnPause" onclick="togglePause()">⏸ พัก / ▶ เริ่มต่อ</button>
-                <button class="btn btn-danger"  onclick="resetTimer()">🔄 รีเซ็ต</button>
+              <div style="display:flex;gap:10px">
+                <button class="btn btn-primary" onclick="setTimer()">⏱ เริ่มนับถอยหลัง</button>
+                <button class="btn btn-danger"  onclick="clearTimer()">⏹ หยุด Timer</button>
               </div>
             </div>
           </div>
@@ -564,44 +563,19 @@ function setTimer() {
   showToast(`⏱ ตั้ง Timer ${h}h ${m}m แล้ว`, 'success');
 }
 
-function togglePause() {
-  const data = DB.getCountdown();
-  if (data.isPaused) {
-    DB.resumeCountdown();
-    showToast('▶ เริ่มนับต่อแล้ว');
-  } else {
-    DB.pauseCountdown();
-    showToast('⏸ พักเวลาแล้ว');
-  }
-}
-
-function resetTimer() {
-  if (!confirm('ยืนยันการรีเซ็ต Timer?')) return;
-  DB.clearCountdown();
-  showToast('🔄 รีเซ็ต Timer แล้ว');
+function clearTimer() {
+  localStorage.removeItem('tq_countdown');
+  showToast('⏹ หยุด Timer แล้ว');
 }
 
 function startTimerPreview() {
   const el  = document.getElementById('timerPreview');
   const lbl = document.getElementById('timerLabelPreview');
-  const btn = document.getElementById('btnPause');
   setInterval(()=>{
-    const data = DB.getCountdown();
     const s = DB.getCountdownRemaining();
-    if (s === null || (!data.endTs && !data.isPaused)) { 
-      el.textContent='--:--:--'; 
-      lbl.textContent='ไม่ได้ตั้ง Timer'; 
-      if(btn) btn.textContent = '⏸ พัก / ▶ เริ่มต่อ';
-      return; 
-    }
-    
-    lbl.textContent = (data.label || 'เหลือเวลา') + (data.isPaused ? ' (พัก)' : '');
+    if (s === null) { el.textContent='--:--:--'; lbl.textContent='ไม่ได้ตั้ง Timer'; return; }
+    lbl.textContent = DB.getCountdown().label || 'เหลือเวลา';
     el.textContent  = `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-    el.style.opacity = data.isPaused ? '0.5' : '1';
-
-    if(btn) {
-      btn.textContent = data.isPaused ? '▶ เริ่มต่อ' : '⏸ พัก';
-    }
   }, 1000);
 }
 

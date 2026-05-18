@@ -681,11 +681,8 @@ function startCountdown() {
   const el=document.getElementById('countdownTimer'), wrap=document.getElementById('headerCountdown'), lbl=document.getElementById('countdownLabel');
   setInterval(()=>{
     const s=DB.getCountdownRemaining(); if(s===null){wrap.style.display='none';return;}
-    wrap.style.display='flex'; 
-    const cd = DB.getCountdown();
-    lbl.textContent=(cd.label||'เหลือเวลา') + (cd.isPaused ? ' (พัก)' : '');
+    wrap.style.display='flex'; lbl.textContent=DB.getCountdown().label||'เหลือเวลา';
     el.textContent=`${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-    el.style.opacity = cd.isPaused ? '0.5' : '1';
   },1000);
 }
 
