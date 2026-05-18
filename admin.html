@@ -248,8 +248,9 @@
               <div class="card-header"><span class="card-title" style="color:#f87171">⚠️ Reset ระบบ</span></div>
               <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
                 <button class="btn btn-danger btn-full" onclick="confirmReset('scores')">🔄 Reset คะแนน (คงน้องไว้)</button>
-                <button class="btn btn-danger btn-full" onclick="confirmReset('all')" style="background:rgba(231,76,60,.3);border:1px solid #e74c3c">☢️ NUCLEAR RESET (ล้างระบบเบ็ดเสร็จ)</button>
-                <div style="font-size:11px;color:var(--text-shadow);line-height:1.6">Reset คะแนน: ล้างเฉพาะคะแนน แต่คงรายชื่อน้องไว้<br>Nuclear Reset: ล้างทั้ง Firebase และเครื่อง Admin (ต้องใช้รหัสผ่าน)</div>              </div>
+                <button class="btn btn-danger btn-full" onclick="confirmReset('all')" style="background:rgba(192,57,43,.2)">💣 Reset ทั้งหมด (ล้างสมบูรณ์)</button>
+                <div style="font-size:11px;color:var(--text-shadow);line-height:1.6">Reset คะแนน: ล้างคะแนน + submissions ทั้งหมด แต่คงน้องและภารกิจไว้<br>Reset ทั้งหมด: ล้าง localStorage ทั้งหมด (ไม่สามารถกู้คืนได้)</div>
+              </div>
             </div>
           </div>
 
@@ -297,47 +298,24 @@
         <!-- CARDS PAGE -->
         <div class="page" id="page-cards">
           <div class="page-header">
-            <div>
-              <h1 class="page-title">🎴 The Tartarus Deck</h1>
-              <p class="page-subtitle">สร้างและจัดการการ์ดพลังพิเศษ</p>
-            </div>
-            <button class="btn btn-ghost btn-sm" onclick="renderCardsPage()">🔄 รีเฟรชทั้งหมด</button>
+            <h1 class="page-title">🎴 The Tartarus Deck</h1>
+            <p class="page-subtitle">สร้างและจัดการการ์ดพลังพิเศษ</p>
           </div>
 
-          <div class="grid-2">
-            <!-- Master Switch -->
-            <div class="card" style="border-color:var(--border-gold)">
-              <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
-                <div>
-                  <div style="font-family:var(--font-title);font-size:16px;color:var(--gold-bright)">⚡ Master Switch</div>
-                  <div style="font-size:12px;color:var(--text-shadow);margin-top:4px">เปิด/ปิดระบบการ์ดทั้งค่าย</div>
-                </div>
-                <button id="masterSwitchBtn" class="btn btn-primary" onclick="toggleMaster()" style="min-width:120px">กำลังโหลด...</button>
+          <!-- Master Switch -->
+          <div class="card" style="border-color:var(--border-gold)">
+            <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+              <div>
+                <div style="font-family:var(--font-title);font-size:16px;color:var(--gold-bright)">⚡ Master Switch</div>
+                <div style="font-size:12px;color:var(--text-shadow);margin-top:4px">เปิด/ปิดระบบการ์ดทั้งค่าย</div>
               </div>
-            </div>
-
-            <!-- Vote Configuration -->
-            <div class="card" style="border-color:var(--border-gold)">
-              <div class="card-body">
-                <div style="font-family:var(--font-title);font-size:16px;color:var(--gold-bright);margin-bottom:8px">🗳️ Vote Settings</div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">จำนวนโหวตที่ต้องการ</label>
-                    <input class="form-input" id="voteTarget" type="number" min="1" value="3">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">เวลาโหวต (นาที)</label>
-                    <input class="form-input" id="voteTimeout" type="number" min="1" value="5">
-                  </div>
-                </div>
-                <button class="btn btn-primary btn-sm mt-8" onclick="saveVoteConfig()">💾 บันทึกตั้งค่าโหวต</button>
-              </div>
+              <button id="masterSwitchBtn" class="btn btn-primary" onclick="toggleMaster()" style="min-width:120px">กำลังโหลด...</button>
             </div>
           </div>
 
           <!-- Buff Status -->
           <div class="card mt-16">
-            <div class="card-header"><span class="card-title">🧿 สถานะ Buff/Debuff ปัจจุบัน</span></div>
+            <div class="card-header"><span class="card-title">🧿 สถานะ Buff/Debuff ปัจจุบัน</span><button class="btn btn-ghost btn-sm" onclick="renderCardsPage()">🔄</button></div>
             <div class="card-body" id="buffStatus" style="display:flex;flex-wrap:wrap;gap:10px">
               <div style="color:var(--text-shadow);font-size:13px">กำลังโหลด...</div>
             </div>
@@ -371,13 +349,6 @@
                   <input class="form-input" id="cardPoints" type="number" value="100" min="0">
                 </div>
                 <div class="form-group">
-                  <label class="form-label">ประเภทการใช้งาน</label>
-                  <select class="form-select" id="cardUsageType">
-                    <option value="direct">🏃 ใช้เองได้เลย</option>
-                    <option value="vote">🗳️ ต้องโหวตรวมใช้</option>
-                  </select>
-                </div>
-                <div class="form-group">
                   <label class="form-label">จำนวนการ์ด</label>
                   <input class="form-input" id="cardQty" type="number" value="1" min="1" max="20">
                 </div>
@@ -402,11 +373,12 @@
           <div class="card mt-16">
             <div class="card-header">
               <span class="card-title">📋 การ์ดทั้งหมด</span>
+              <button class="btn btn-ghost btn-sm" onclick="renderCardsList()">🔄 Refresh</button>
             </div>
             <div class="card-body" style="padding:0">
               <table class="data-table">
-                <thead><tr><th>Code</th><th>Ability</th><th>Rarity</th><th>คะแนน</th><th>ประเภท</th><th>สถานะ</th><th>เวลา</th><th>จัดการ</th></tr></thead>
-                <tbody id="cardsTable"><tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-shadow)">กดรีเฟรชเพื่อโหลด</td></tr></tbody>
+                <thead><tr><th>Code</th><th>Ability</th><th>Rarity</th><th>คะแนน</th><th>สถานะ</th><th>เวลา</th></tr></thead>
+                <tbody id="cardsTable"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-shadow)">กด Refresh เพื่อโหลด</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -415,11 +387,12 @@
           <div class="card mt-16">
             <div class="card-header">
               <span class="card-title">📜 Card Event Log</span>
+              <button class="btn btn-ghost btn-sm" onclick="renderEventLog()">🔄 Refresh</button>
             </div>
             <div class="card-body" style="padding:0">
               <table class="data-table">
                 <thead><tr><th>Event</th><th>จาก</th><th>เป้า</th><th>รายละเอียด</th><th>เวลา</th></tr></thead>
-                <tbody id="cardEventLog"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-shadow)">กดรีเฟรชเพื่อโหลด</td></tr></tbody>
+                <tbody id="cardEventLog"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-shadow)">กด Refresh เพื่อโหลด</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -589,26 +562,13 @@ async function renderCardsPage() {
     _masterOn = on;
     const btn = document.getElementById('masterSwitchBtn');
     if (btn) {
-      btn.textContent = on ? '🛑 ปิดระบบ' : '⚡ เปิดระบบ';
-      btn.className = on ? 'btn btn-danger' : 'btn btn-primary';
+      btn.textContent = on ? '🟢 เปิดอยู่ — กดปิด' : '🔴 ปิดอยู่ — กดเปิด';
+      btn.style.background = on ? 'rgba(34,197,94,.15)' : 'rgba(192,57,43,.15)';
     }
   });
-  
-  // Load vote config
-  const config = await CARDS.getVoteConfig();
-  document.getElementById('voteTarget').value = config.target;
-  document.getElementById('voteTimeout').value = config.timeout;
-
   renderBuffStatus();
   renderCardsList();
   renderEventLog();
-}
-
-async function saveVoteConfig() {
-  const target = parseInt(document.getElementById('voteTarget').value) || 3;
-  const timeout = parseInt(document.getElementById('voteTimeout').value) || 5;
-  await CARDS.setVoteConfig({ target, timeout });
-  showToast('🗳️ บันทึกตั้งค่าโหวตแล้ว', 'success');
 }
 
 async function toggleMaster() {
@@ -639,15 +599,14 @@ async function removeBuff(teamId, type) {
 }
 
 async function generateCards() {
-  const ability   = document.getElementById('cardAbility').value;
-  const rarity    = document.getElementById('cardRarity').value;
-  const usageType = document.getElementById('cardUsageType').value;
-  const points    = parseInt(document.getElementById('cardPoints').value) || 100;
-  const qty       = Math.min(20, parseInt(document.getElementById('cardQty').value) || 1);
-  const note      = document.getElementById('cardNote').value.trim();
+  const ability = document.getElementById('cardAbility').value;
+  const rarity  = document.getElementById('cardRarity').value;
+  const points  = parseInt(document.getElementById('cardPoints').value) || 100;
+  const qty     = Math.min(20, parseInt(document.getElementById('cardQty').value) || 1);
+  const note    = document.getElementById('cardNote').value.trim();
 
   const cards = [];
-  for (let i=0; i<qty; i++) cards.push(await CARDS.createCard(ability, points, rarity, note, usageType));
+  for (let i=0; i<qty; i++) cards.push(await CARDS.createCard(ability, points, rarity, note));
 
   // แสดงการ์ดที่สร้าง
   const ab = CARD_ABILITIES[ability];
@@ -660,7 +619,6 @@ async function generateCards() {
       <div style="font-size:32px;margin:8px 0">${ab.icon}</div>
       <div style="font-family:var(--font-title);font-size:13px;color:var(--gold-bright);letter-spacing:1px">${ab.name}</div>
       <div style="font-size:11px;color:var(--text-shadow);margin:6px 0">${ab.desc}</div>
-      <div style="font-size:10px;color:var(--gold);margin-bottom:4px">${usageType === 'vote' ? '🗳️ โหวตทีม' : '🏃 ใช้ทันที'}</div>
       ${points && (ability==='steal'||ability==='freeze') ? `<div style="font-family:var(--font-mono);font-size:14px;color:var(--gold);margin:4px 0">${points} pt</div>` : ''}
       <div style="font-family:var(--font-mono);font-size:18px;letter-spacing:4px;color:var(--gold-bright);margin-top:8px;padding:6px;background:var(--bg-block);border-radius:6px">${card.code}</div>
       ${note ? `<div style="font-size:10px;color:var(--text-shadow);margin-top:4px">${note}</div>` : ''}
@@ -671,13 +629,6 @@ async function generateCards() {
 }
 
 function printCards() { window.print(); }
-
-async function deleteCardUI(cardId) {
-  if (!confirm('ยืนยันการลบการ์ดใบนี้?')) return;
-  await CARDS.deleteCard(cardId);
-  showToast('🗑️ ลบการ์ดแล้ว');
-  renderCardsList();
-}
 
 async function renderCardsList() {
   const cards = await CARDS.getAllCards();
@@ -691,12 +642,10 @@ async function renderCardsList() {
       <td>${ab?.icon||''} ${ab?.name||c.ability}</td>
       <td style="color:${ra[c.rarity]?.color||'#fff'}">${ra[c.rarity]?.label||c.rarity}</td>
       <td style="font-family:var(--font-mono);color:var(--gold)">${c.points}</td>
-      <td style="font-size:12px">${c.usageType === 'vote' ? '🗳️ โหวต' : '🏃 ทันที'}</td>
       <td style="color:${c.usedBy?'#f87171':'var(--magic-green)'}">${c.usedBy?'✅ ใช้แล้ว':'⭕ ว่าง'}</td>
       <td style="font-size:11px;color:var(--text-shadow)">${new Date(c.createdAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}</td>
-      <td><button class="btn btn-ghost btn-sm" style="color:#ef4444" onclick="deleteCardUI('${c.id}')">ลบ</button></td>
     </tr>`;
-  }).join('') : '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-shadow)">ยังไม่มีการ์ด</td></tr>';
+  }).join('') : '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-shadow)">ยังไม่มีการ์ด</td></tr>';
 }
 
 async function renderEventLog() {
@@ -914,37 +863,17 @@ async function confirmDeleteFirebase() {
   setTimeout(() => status.textContent = '', 3000);
 }
 
-async function nuclearReset() {
-  const pin = prompt('กรุณาใส่รหัส PIN Admin เพื่อยืนยัน (Nuclear Option):');
-  if (pin !== '9999') { 
-    if (pin !== null) alert('❌ รหัส PIN ไม่ถูกต้อง'); 
-    return; 
-  }
-  
-  const confirmText = prompt('คำเตือน: นี่คือการล้างข้อมูลเบ็ดเสร็จ (Nuclear Option)\nพิมพ์คำว่า "NUCLEAR" เพื่อยืนยันการลบถาวร:');
-  if (confirmText !== 'NUCLEAR') { 
-    if (confirmText !== null) alert('❌ การยืนยันไม่ถูกต้อง ยกเลิกการลบ'); 
-    return; 
-  }
-  
-  if (confirm('💣 ยืนยันครั้งสุดท้าย? ข้อมูลทั้งหมดบน Firebase และเครื่องนี้จะถูกลบถาวรและไม่สามารถกู้คืนได้!')) {
-    await DB.resetAll();
-    alert('☢️ NUCLEAR RESET COMPLETE! ระบบกำลังเริ่มต้นใหม่...');
-    location.reload();
-  }
-}
-
 function confirmReset(type) {
-  if (type === 'all') { nuclearReset(); return; }
-  const titles = { scores:'Reset คะแนนทั้งหมด?' };
-  const subs   = { scores:'ลบคะแนน + submissions ทั้งหมด (ข้อมูลน้องและภารกิจยังอยู่)' };
+  const titles = { scores:'Reset คะแนนทั้งหมด?', all:'Reset ทั้งหมด?' };
+  const subs   = { scores:'ลบคะแนน + submissions ทั้งหมด (ข้อมูลน้องและภารกิจยังอยู่)', all:'ล้าง localStorage ทั้งหมด ไม่สามารถกู้คืนได้!' };
   document.getElementById('confirmTitle').textContent = titles[type];
   document.getElementById('confirmSub').textContent   = subs[type];
   document.getElementById('confirmOkBtn').onclick = () => {
     if (type==='scores') DB.resetScoresOnly();
+    else DB.resetAll();
     document.getElementById('confirmModal').classList.remove('open');
     renderSidebar(); renderExportPage();
-    showToast('🔄 Reset คะแนนแล้ว', 'success');
+    showToast(type==='all'?'💣 Reset สมบูรณ์':'🔄 Reset คะแนนแล้ว', type==='all'?'error':'success');
   };
   document.getElementById('confirmModal').classList.add('open');
 }
