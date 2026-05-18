@@ -891,16 +891,24 @@ function renderVoteBanner() {
     if (_voteTimer) { clearInterval(_voteTimer); _voteTimer = null; }
     return; 
   }
-  
+
+  // เช็คเบื้องต้นถ้าหมดเวลาแล้วไม่ต้องโชว์
+  const exp = parseInt(_currentVote.expiresAt);
+  if (!isNaN(exp) && Date.now() > exp) {
+    el.style.display = 'none';
+    if (_voteTimer) { clearInterval(_voteTimer); _voteTimer = null; }
+    return;
+  }
+
   el.style.display = 'block';
   const ab = CARD_ABILITIES[_currentVote.card.ability];
   document.getElementById('voteIcon').textContent = ab?.icon || '🗳️';
   document.getElementById('voteTitle').textContent = `${_currentVote.camperName} ต้องการใช้ ${ab?.name}`;
-  
+
   if (!_voteTimer) {
     _voteTimer = setInterval(() => {
       if (!_currentVote) { clearInterval(_voteTimer); _voteTimer = null; return; }
-      
+
       const expiresAt = parseInt(_currentVote.expiresAt);
       if (isNaN(expiresAt)) {
         document.getElementById('voteDesc').textContent = '❌ ข้อมูลเวลาไม่ถูกต้อง';
@@ -914,8 +922,12 @@ function renderVoteBanner() {
         document.getElementById('voteDesc').textContent = '❌ หมดเวลาโหวต';
         clearInterval(_voteTimer);
         _voteTimer = null;
-        // ปิดแบนเนอร์ถ้าหมดเวลาแล้ว
-        setTimeout(() => { if (!_currentVote) document.getElementById('activeVoteBanner').style.display = 'none'; }, 3000);
+        // ปิดแบนเนอร์หลังจากโชว์ว่าหมดเวลาแล้ว 3 วินาที
+        setTimeout(() => { 
+          const banner = document.getElementById('activeVoteBanner');
+          if (banner) banner.style.display = 'none';
+          _currentVote = null; // เคลียร์ค่าในเครื่องด้วย
+        }, 3000);
         return;
       }
       const m = Math.floor(diff / 60000);
@@ -924,7 +936,6 @@ function renderVoteBanner() {
       document.getElementById('voteDesc').textContent = `ต้องการอีก ${remaining} โหวต · ⏳ ${m}:${String(s).padStart(2,'0')}`;
     }, 1000);
   }
-  
   const btn = document.getElementById('voteBtn');
   const alreadyApproved = _currentVote.approvals && _currentVote.approvals[session.camperId];
   if (alreadyApproved) {
