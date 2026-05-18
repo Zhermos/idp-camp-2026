@@ -980,6 +980,9 @@ function initCardListener() {
 }
 
 function showCardAlert(ev) {
+  // ป้องกันแจ้งเตือนค้างเก่า (ข้ามถ้างานนี้เกิดขึ้นนานเกิน 60 วินาทีแล้ว)
+  if (ev.ts && (Date.now() - new Date(ev.ts).getTime() > 60000)) return;
+
   const overlay = document.getElementById('cardAlertOverlay');
   const icons = { steal:'⚡', aegis:'🛡️', reflect:'🔄', multiplier:'🔥', freeze:'❄️', aegis_block:'🛡️' };
   document.getElementById('cardAlertIcon').textContent = icons[ev.type]||'🎴';
