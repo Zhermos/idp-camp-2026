@@ -588,8 +588,13 @@ const CARDS = {
   // ── VOTING SYSTEM ────────────────────────────────────
 
   async getVoteConfig() {
+    if (!_fbReady || !_db) return { target: 3, timeout: 5 };
     const snap = await _db.ref('cards/voteConfig').once('value');
-    return snap.val() || { target: 3, timeout: 5 }; // default 3 คน 5 นาที
+    const val = snap.val() || {};
+    return { 
+      target: parseInt(val.target) || 3, 
+      timeout: parseInt(val.timeout) || 5 
+    };
   },
 
   async setVoteConfig(config) {
@@ -609,7 +614,8 @@ const CARDS = {
 
     const config = await this.getVoteConfig();
     const voteId = 'vote_' + Date.now();
-    const expiresAt = Date.now() + (config.timeout * 60 * 1000);
+    const timeout = parseInt(config.timeout) || 5;
+    const expiresAt = Date.now() + (timeout * 60 * 1000);
 
     const vote = {
       id: voteId,
@@ -634,7 +640,7 @@ const CARDS = {
       fromTeamId: teamId, 
       cardId, 
       camperName, 
-      msg: `🗳️ ${camperName} ต้องการใช้การ์ด ${CARD_ABILITIES[card.ability]?.name}! ต้องการ ${config.target} โหวต (${config.timeout} นาที)` 
+      msg: `🗳️ ${camperName} ต้องการใช้การ์ด ${CARD_ABILITIES[card.ability]?.name}! ต้องการ ${config.target} โหวต (${timeout} นาที)` 
     });
 
     return { ok:true, voteId };

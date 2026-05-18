@@ -928,7 +928,7 @@ async function nuclearReset() {
   }
   
   if (confirm('💣 ยืนยันครั้งสุดท้าย? ข้อมูลทั้งหมดบน Firebase และเครื่องนี้จะถูกลบถาวรและไม่สามารถกู้คืนได้!')) {
-    DB.resetAll();
+    await DB.resetAll();
     alert('☢️ NUCLEAR RESET COMPLETE! ระบบกำลังเริ่มต้นใหม่...');
     location.reload();
   }
